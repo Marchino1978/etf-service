@@ -5,6 +5,11 @@ export const config = {
     { symbol: 'VUAA.MI', isin: 'IE00BFMXXD54', name: 'Vanguard S&P 500 UCITS ETF (USD) Acc' },
     { symbol: 'VNGA80.MI', isin: 'IE00BMVB5R75', name: 'Vanguard LifeStrategy 80% Equity UCITS ETF (EUR) Acc' },
     { symbol: 'GOLD.MI', isin: 'FR0013416716', name: 'Amundi Physical Gold ETC (C)' }
+
+    // 🔽 Nuovi titoli USA
+    { symbol: 'SPY', isin: 'US78462F1030', name: 'SPDR S&P 500 ETF Trust' },
+    { symbol: 'QQQ', isin: 'US46090E1038', name: 'Invesco QQQ Trust (Nasdaq 100)' },
+    { symbol: 'AAPL', isin: 'US0378331005', name: 'Apple Inc.' }
   ],
   marketHours: {
     timezone: 'Europe/Rome',
