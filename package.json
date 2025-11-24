@@ -5,11 +5,13 @@
   "main": "updater.js",
   "type": "module",
   "scripts": {
-    "start": "node updater.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "dotenv": "^16.3.1",
-    "pg": "^8.11.3",
-    "node-fetch": "^3.3.2"
+    "express": "^5.1.0",
+    "luxon": "^3.7.2",
+    "node-fetch": "^3.3.2",
+    "pg": "^8.11.3"
   }
 }
