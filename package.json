@@ -1,17 +1,5 @@
-{
-  "name": "etf-service",
-  "version": "1.0.0",
-  "description": "Updater ETF con PostgreSQL",
-  "main": "updater.js",
-  "type": "module",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "dotenv": "^16.3.1",
-    "express": "^5.1.0",
-    "luxon": "^3.7.2",
-    "node-fetch": "^3.3.2",
-    "pg": "^8.11.3"
-  }
+"dependencies": {
+  "express": "^4.18.2",
+  "node-fetch": "^3.0.0",
+  "cheerio": "^1.0.0"
 }

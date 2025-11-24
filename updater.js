@@ -1,59 +1,23 @@
-// updater.js
-import dotenv from 'dotenv';
-import pkg from 'pg';
-import fetch from 'node-fetch';
-import { isMarketOpen, config } from './config.js';
+import getVUAA from "./vuaa.js";
+import getVNGA80 from "./vnga80.js";
+import getGOLD from "./gold.js";
+import { savePrice } from "./store.js";
 
-dotenv.config();
-const { Client } = pkg;
+async function updateAll() {
+  const vuaa = await getVUAA();
+  savePrice("VUAA", vuaa);
 
-const client = new Client({
-  connectionString: process.env.PG_URI,
-});
+  const vnga80 = await getVNGA80();
+  savePrice("VNGA80", vnga80);
 
-async function main() {
-  try {
-    await client.connect();
-    console.log("✅ Connesso a PostgreSQL");
+  const gold = await getGOLD();
+  savePrice("GOLD", gold);
 
-    // Crea tabella se non esiste
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS quotes (
-        id SERIAL PRIMARY KEY,
-        symbol TEXT NOT NULL UNIQUE,
-        price NUMERIC,
-        updated TIMESTAMP DEFAULT NOW()
-      )
-    `);
-
-    for (const { symbol } of config.tickers) {
-      if (isMarketOpen(symbol)) {
-        // Qui puoi sostituire con una chiamata API reale
-        const price = (Math.random() * 1000).toFixed(2);
-
-        await client.query(
-          `INSERT INTO quotes(symbol, price, updated)
-           VALUES($1, $2, NOW())
-           ON CONFLICT (symbol)
-           DO UPDATE SET price = EXCLUDED.price, updated = EXCLUDED.updated`,
-          [symbol, price]
-        );
-
-        console.log(`💾 Aggiornato ${symbol} a ${price}`);
-      } else {
-        console.log(`⏸ Mercato chiuso per ${symbol}, nessun aggiornamento`);
-      }
-    }
-
-    const res = await client.query("SELECT * FROM quotes ORDER BY symbol ASC");
-    console.log("📊 Dati in tabella:", res.rows);
-
-  } catch (err) {
-    console.error("❌ Errore:", err);
-  } finally {
-    await client.end();
-  }
+  console.log("✅ Aggiornamento completato");
 }
+
+// Aggiorna ogni minuto
+setInterval(updateAll, 60 * 1000);
 
 main();
 
