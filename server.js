@@ -1,20 +1,41 @@
+// server.js
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import { config } from './config.js';
-import { getAllQuotes, getQuote } from './store.js';
-import { runUpdateCycle } from './updater.js';
+import { runUpdateCycle, getAllQuotes, getQuote } from './store.js'; // aggiorniamo store.js per usare PG
 
 const app = express();
 
-app.get('/quotes', (req,res)=>res.json(getAllQuotes()));
-app.get('/quotes/:symbol', (req,res)=>{
-  const q = getQuote(req.params.symbol.toUpperCase());
-  if (!q) return res.status(404).json({error:'not found'});
-  res.json(q);
+// Endpoint REST
+app.get('/quotes', async (req, res) => {
+  try {
+    const quotes = await getAllQuotes();
+    res.json(quotes);
+  } catch (err) {
+    console.error("❌ Errore /quotes:", err);
+    res.status(500).json({ error: 'internal error' });
+  }
 });
-app.get('/health',(req,res)=>res.json({status:'ok'}));
 
+app.get('/quotes/:symbol', async (req, res) => {
+  try {
+    const q = await getQuote(req.params.symbol.toUpperCase());
+    if (!q) return res.status(404).json({ error: 'not found' });
+    res.json(q);
+  } catch (err) {
+    console.error("❌ Errore /quotes/:symbol:", err);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+// Avvio server
 const port = process.env.PORT || 3000;
-app.listen(port, ()=>console.log(`Server on ${port}`));
+app.listen(port, () => console.log(`🚀 Server avviato su http://localhost:${port}`));
 
-setInterval(()=>runUpdateCycle(console), config.updateIntervalMin*60*1000);
+// Ciclo di aggiornamento periodico
+setInterval(() => runUpdateCycle(console), config.updateIntervalMin * 60 * 1000);
 runUpdateCycle(console);

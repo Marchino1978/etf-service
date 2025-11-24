@@ -1,19 +1,55 @@
-import { config, isMarketOpen } from './config.js';
-import { fetchQuote } from './provider.js';
-import { setQuote } from './store.js';
+// updater.js
+import dotenv from 'dotenv';
+import pkg from 'pg';
+import fetch from 'node-fetch';
 
-export async function runUpdateCycle(logger = console) {
-  if (!isMarketOpen()) {
-    logger.info('[updater] Mercato chiuso');
-    return;
-  }
-  for (const t of config.tickers) {
-    try {
-      const q = await fetchQuote(t.symbol);
-      setQuote(t.symbol, { ...q, symbol: t.symbol, isin: t.isin, name: t.name });
-      logger.info(`[updater] Aggiornato ${t.symbol}`);
-    } catch (err) {
-      logger.error(`[updater] Errore ${t.symbol}: ${err.message}`);
+dotenv.config();
+const { Client } = pkg;
+
+const client = new Client({
+  connectionString: process.env.PG_URI,
+});
+
+async function main() {
+  try {
+    await client.connect();
+    console.log("✅ Connesso a PostgreSQL");
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS quotes (
+        id SERIAL PRIMARY KEY,
+        symbol TEXT NOT NULL UNIQUE,
+        price NUMERIC,
+        updated TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    const tickers = ["SPY", "QQQ", "AAPL"];
+
+    for (const symbol of tickers) {
+      const price = (Math.random() * 1000).toFixed(2);
+
+      await client.query(
+        `INSERT INTO quotes(symbol, price, updated)
+         VALUES($1, $2, NOW())
+         ON CONFLICT (symbol)
+         DO UPDATE SET price = EXCLUDED.price, updated = EXCLUDED.updated`,
+        [symbol, price]
+      );
+
+      console.log(`💾 Aggiornato ${symbol} a ${price}`);
     }
+
+    const res = await client.query("SELECT * FROM quotes ORDER BY symbol ASC");
+    console.log("📊 Dati in tabella:", res.rows);
+
+  } catch (err) {
+    console.error("❌ Errore:", err);
+  } finally {
+    await client.end();
   }
 }
+
+main();
+
+

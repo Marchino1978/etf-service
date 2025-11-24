@@ -1,13 +1,15 @@
 {
-  "name": "etf-quotes-service",
+  "name": "etf-service",
   "version": "1.0.0",
+  "description": "Updater ETF con PostgreSQL",
+  "main": "updater.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node updater.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "luxon": "^3.5.0",
+    "dotenv": "^16.3.1",
+    "pg": "^8.11.3",
     "node-fetch": "^3.3.2"
   }
 }
