@@ -13,6 +13,7 @@ dist/
 build/
 .tmp/
 .cache/
+coverage/
 
 # Configurazioni locali
 .env
@@ -24,10 +25,17 @@ testEaster.js
 *.test.js
 test*.js
 
+# Script di test shell
+*-test.sh
+test*.sh
+
 # File di sistema
 .DS_Store
 Thumbs.db
 
-# Backup
+# Backup e file temporanei
 *.bak
 *.swp
+*.pid
+*.seed
+
