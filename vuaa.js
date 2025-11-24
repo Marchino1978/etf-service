@@ -14,3 +14,8 @@ export default async function getVUAA() {
     change: $('span[source="lightstreamer"][table="quotes"][item="1045562@1"][field="change"]').text().trim()
   };
 }
+
+// Se eseguito direttamente, stampa i dati
+if (import.meta.url === `file://${process.argv[1]}`) {
+  getVUAA().then(data => console.log("VUAA:", data));
+}

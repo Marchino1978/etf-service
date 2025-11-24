@@ -1,7 +1,16 @@
 import express from "express";
-import { getPrice } from "./store.js";
+import { getPrice, getAllPrices } from "./store.js";
+import "./updater.js"; // <-- avvia subito l’updater
 
 const app = express();
+
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
+app.get("/api/etf", (req, res) => {
+  res.json(getAllPrices());
+});
 
 app.get("/api/etf/:symbol", (req, res) => {
   const symbol = req.params.symbol.toUpperCase();

@@ -14,3 +14,8 @@ export default async function getVNGA80() {
     change: $('span[source="lightstreamer"][table="quotes"][item="1376226@1"][field="change"]').text().trim()
   };
 }
+
+// Se eseguito direttamente, stampa i dati
+if (import.meta.url === `file://${process.argv[1]}`) {
+  getVNGA80().then(data => console.log("VNGA80:", data));
+}

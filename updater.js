@@ -4,20 +4,12 @@ import getGOLD from "./gold.js";
 import { savePrice } from "./store.js";
 
 async function updateAll() {
-  const vuaa = await getVUAA();
-  savePrice("VUAA", vuaa);
-
-  const vnga80 = await getVNGA80();
-  savePrice("VNGA80", vnga80);
-
-  const gold = await getGOLD();
-  savePrice("GOLD", gold);
-
+  savePrice("VUAA", await getVUAA());
+  savePrice("VNGA80", await getVNGA80());
+  savePrice("GOLD", await getGOLD());
   console.log("✅ Aggiornamento completato");
 }
 
-// Aggiorna ogni minuto
+// Aggiorna subito e poi ogni minuto
+updateAll();
 setInterval(updateAll, 60 * 1000);
-
-main();
-

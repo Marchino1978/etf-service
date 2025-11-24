@@ -14,3 +14,8 @@ export default async function getGOLD() {
     change: $('span[source="lightstreamer"][table="quotes"][item="979663@1"][field="change"]').text().trim()
   };
 }
+
+// Se eseguito direttamente, stampa i dati
+if (import.meta.url === `file://${process.argv[1]}`) {
+  getGOLD().then(data => console.log("GOLD:", data));
+}
