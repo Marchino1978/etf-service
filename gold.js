@@ -14,6 +14,7 @@ function getPreviousClose(symbol) {
 function saveClose(symbol, mid) {
   const now = new Date();
   const hour = now.getHours();
+  const minute = now.getMinutes();
 
   // Broker chiude alle 23:00 → salvo ultimo prezzo come chiusura
   if (hour >= 23) {
