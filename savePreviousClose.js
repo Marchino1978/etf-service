@@ -1,17 +1,16 @@
 // savePreviousClose.js
-const fs = require("fs");
-const path = require("path");
-const axios = require("axios");
+import fs from "fs";
+import path from "path";
+import axios from "axios";
 
-const url = "https://etf-service.onrender.com/api/etf"; // endpoint API
-const filePath = path.join(__dirname, "previousClose.json");
+const url = "http://localhost:3000/api/etf"; // endpoint locale
+const filePath = path.join(process.cwd(), "previousClose.json");
 
 async function savePreviousClose() {
   try {
     const res = await axios.get(url);
     const data = res.data;
 
-    // Salva i valori attuali come "previousClose"
     const snapshot = {};
     for (const key in data) {
       snapshot[key] = {
