@@ -17,4 +17,4 @@ git add .
 git commit -m "$1"
 
 # Fa il push su main
-git push -u origin main
+git push -u origin main1

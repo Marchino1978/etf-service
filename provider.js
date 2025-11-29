@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+1import fetch from 'node-fetch';
 
 const API_KEY = process.env.FINNHUB_API_KEY;
 
