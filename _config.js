@@ -1,4 +1,4 @@
-1import { DateTime } from 'luxon';
+import { DateTime } from 'luxon';
 
 export const config = {
   tickers: [
