@@ -13,8 +13,14 @@ try {
   console.log("⚠️ Nessun previousClose.json trovato, dailyChange rimarrà vuoto");
 }
 
+// Endpoint di health check già presente
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
+});
+
+// ✅ Nuovo endpoint di keep-alive
+app.get("/ping", (req, res) => {
+  res.status(200).send("pong");
 });
 
 app.get("/api/etf", (req, res) => {
