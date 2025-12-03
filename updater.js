@@ -5,6 +5,7 @@ import { savePrice } from "./store.js";
 
 async function updateAll() {
   try {
+    // Scraping dei singoli ETF
     const vuaa = await getVUAA();
     savePrice("VUAA", vuaa);
 
@@ -16,12 +17,18 @@ async function updateAll() {
 
     console.log("✅ Aggiornamento completato");
   } catch (err) {
-    console.error("❌ Errore durante l'aggiornamento:", err.message);
+    // ✅ Gestione specifica errore 429
+    if (err.response && err.response.status === 429) {
+      console.warn("⚠️ Rate limit raggiunto (429), bypass: mantengo i dati esistenti nello store");
+      // Non aggiorno nulla, ma non blocco il servizio
+    } else {
+      console.error("❌ Errore durante l'aggiornamento:", err.message);
+    }
   }
 }
 
 // 👉 Popola subito lo store all’avvio
 updateAll();
 
-// 👉 Aggiorna ogni minuto
-setInterval(updateAll, 60 * 1000);
+// 👉 Aggiorna ogni 15 minuti (non più ogni minuto)
+setInterval(updateAll, 15 * 60 * 1000); // <-- intervallo aumentato

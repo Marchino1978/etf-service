@@ -1,11 +1,11 @@
 import express from "express";
 import fs from "fs";
 import { getPrice, getAllPrices } from "./store.js";
-import "./updater.js"; // <-- avvia subito l’updater
+import "./updater.js"; // <-- avvia subito l’updater che fa scraping periodico e aggiorna lo store
 
 const app = express();
 
-// Carica i valori di chiusura salvati
+// Carica i valori di chiusura salvati da file (per calcolare dailyChange)
 let previousClose = {};
 try {
   previousClose = JSON.parse(fs.readFileSync("./previousClose.json", "utf8"));
@@ -18,53 +18,44 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-// ✅ Nuovo endpoint di keep-alive
-app.get("/ping", (req, res) => {          // <-- aggiunto per cronjob leggero
-  res.status(200).send("pong");           // <-- risponde sempre OK
+// Endpoint di keep-alive (ping leggero per cronjob)
+app.get("/ping", (req, res) => {
+  res.status(200).send("pong"); // <-- risponde sempre OK, non fa scraping
 });
 
-// Endpoint ETF con gestione errori
+// Endpoint ETF: restituisce tutti i dati dallo store
+// ⚠️ Importante: NON fa scraping diretto, legge solo i dati aggiornati da updater.js
 app.get("/api/etf", (req, res) => {
   try {
-    const allPrices = getAllPrices();
+    const allPrices = getAllPrices(); // <-- legge dallo store
     const enriched = {};
 
     for (const symbol in allPrices) {
       enriched[symbol] = addDailyChange(symbol, allPrices[symbol]);
     }
 
-    res.json(enriched);
+    res.json(enriched); // <-- risponde con snapshot aggiornato
   } catch (error) {
-    // ✅ Gestione specifica errore 429
-    if (error.response && error.response.status === 429) {   // <-- intercetta 429
-      console.warn("Rate limit raggiunto, bypass con risposta OK"); // <-- log
-      res.status(200).json({ warning: "429 Too Many Requests, dati non aggiornati" }); // <-- risponde comunque 200
-    } else {
-      res.status(500).json({ error: "Errore nel recupero ETF" });
-    }
+    res.status(500).json({ error: "Errore nel recupero ETF" });
   }
 });
 
+// Endpoint ETF singolo: restituisce un simbolo specifico dallo store
 app.get("/api/etf/:symbol", (req, res) => {
   const symbol = req.params.symbol.toUpperCase();
   try {
-    const price = getPrice(symbol);
+    const price = getPrice(symbol); // <-- legge dallo store
     if (price) {
       res.json(addDailyChange(symbol, price));
     } else {
       res.status(404).json({ error: "ETF non trovato" });
     }
   } catch (error) {
-    // ✅ Gestione anche qui del 429
-    if (error.response && error.response.status === 429) {   // <-- intercetta 429
-      console.warn(`Rate limit per ${symbol}, bypass con risposta OK`); // <-- log
-      res.status(200).json({ warning: "429 Too Many Requests, dati non aggiornati" }); // <-- risponde comunque 200
-    } else {
-      res.status(500).json({ error: "Errore nel recupero ETF" });
-    }
+    res.status(500).json({ error: "Errore nel recupero ETF" });
   }
 });
 
+// Funzione per calcolare dailyChange rispetto al previousClose salvato
 function addDailyChange(symbol, price) {
   let dailyChange = "";
   if (previousClose[symbol]) {
@@ -78,6 +69,7 @@ function addDailyChange(symbol, price) {
   return { ...price, dailyChange };
 }
 
+// Avvio server
 app.listen(3000, () => {
   console.log("🚀 Server avviato su http://localhost:3000");
 });
