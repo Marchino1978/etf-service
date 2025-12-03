@@ -13,34 +13,55 @@ try {
   console.log("⚠️ Nessun previousClose.json trovato, dailyChange rimarrà vuoto");
 }
 
-// Endpoint di health check già presente
+// Endpoint di health check
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
 // ✅ Nuovo endpoint di keep-alive
-app.get("/ping", (req, res) => {
-  res.status(200).send("pong");
+app.get("/ping", (req, res) => {          // <-- aggiunto per cronjob leggero
+  res.status(200).send("pong");           // <-- risponde sempre OK
 });
 
+// Endpoint ETF con gestione errori
 app.get("/api/etf", (req, res) => {
-  const allPrices = getAllPrices();
-  const enriched = {};
+  try {
+    const allPrices = getAllPrices();
+    const enriched = {};
 
-  for (const symbol in allPrices) {
-    enriched[symbol] = addDailyChange(symbol, allPrices[symbol]);
+    for (const symbol in allPrices) {
+      enriched[symbol] = addDailyChange(symbol, allPrices[symbol]);
+    }
+
+    res.json(enriched);
+  } catch (error) {
+    // ✅ Gestione specifica errore 429
+    if (error.response && error.response.status === 429) {   // <-- intercetta 429
+      console.warn("Rate limit raggiunto, bypass con risposta OK"); // <-- log
+      res.status(200).json({ warning: "429 Too Many Requests, dati non aggiornati" }); // <-- risponde comunque 200
+    } else {
+      res.status(500).json({ error: "Errore nel recupero ETF" });
+    }
   }
-
-  res.json(enriched);
 });
 
 app.get("/api/etf/:symbol", (req, res) => {
   const symbol = req.params.symbol.toUpperCase();
-  const price = getPrice(symbol);
-  if (price) {
-    res.json(addDailyChange(symbol, price));
-  } else {
-    res.status(404).json({ error: "ETF non trovato" });
+  try {
+    const price = getPrice(symbol);
+    if (price) {
+      res.json(addDailyChange(symbol, price));
+    } else {
+      res.status(404).json({ error: "ETF non trovato" });
+    }
+  } catch (error) {
+    // ✅ Gestione anche qui del 429
+    if (error.response && error.response.status === 429) {   // <-- intercetta 429
+      console.warn(`Rate limit per ${symbol}, bypass con risposta OK`); // <-- log
+      res.status(200).json({ warning: "429 Too Many Requests, dati non aggiornati" }); // <-- risponde comunque 200
+    } else {
+      res.status(500).json({ error: "Errore nel recupero ETF" });
+    }
   }
 });
 
