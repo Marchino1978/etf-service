@@ -18,13 +18,13 @@ async function updateAll() {
     const gold = await getGOLD();
     savePrice("GOLD", gold);
 
-    const gold = await getXEON();
+    const xeon = await getXEON();
     savePrice("XEON", xeon);
 
-    const gold = await getISAC();
+    const isac = await getISAC();
     savePrice("ISAC", isac);
 
-    const gold = await getX13E();
+    const x13e = await getX13E();
     savePrice("X13E", x13e);
 
     console.log("✅ Aggiornamento completato");
