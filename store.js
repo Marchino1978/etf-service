@@ -41,7 +41,8 @@ export function savePrice(symbol, values) {
 
   // --- Salvataggio dati ---
   data[symbol] = {
-    ...values,
+    ...values,         // contiene mid, ecc.
+    label: values.label || symbol, // <-- aggiunto supporto label
     change,
     dailyChange,
     updatedAt: now
