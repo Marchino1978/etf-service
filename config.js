@@ -5,6 +5,9 @@ export const config = {
     { symbol: 'VUAA.MI', isin: 'IE00BFMXXD54', name: 'Vanguard S&P 500 UCITS ETF (USD) Acc', market: 'EU' },
     { symbol: 'VNGA80.MI', isin: 'IE00BMVB5R75', name: 'Vanguard LifeStrategy 80% Equity UCITS ETF (EUR) Acc', market: 'EU' },
     { symbol: 'GOLD.MI', isin: 'FR0013416716', name: 'Amundi Physical Gold ETC (C)', market: 'EU' },
+    { symbol: 'XEON.MI', isin: 'LU0290358497', name: 'Xtrackers II EUR Overnight Rate Swap UCITS ETF', market: 'EU' },
+    { symbol: 'ISAC.MI', isin: 'IE00B6R52259', name: 'iShares MSCI ACWI UCITS ETF (USD) Acc', market: 'EU' },
+    { symbol: 'X13E.MI', isin: 'LU0290356871', name: 'Xtrackers II Eurozone Government Bond 1-3 UCITS ETF', market: 'EU' },
 
     { symbol: 'SPY', isin: 'US78462F1030', name: 'SPDR S&P 500 ETF Trust', market: 'US' },
     { symbol: 'QQQ', isin: 'US46090E1038', name: 'Invesco QQQ Trust (Nasdaq 100)', market: 'US' },

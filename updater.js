@@ -1,6 +1,9 @@
 import getVUAA from "./vuaa.js";
 import getVNGA80 from "./vnga80.js";
 import getGOLD from "./gold.js";
+import getXEON from "./xeon.js";
+import getISAC from "./isac.js";
+import getX13E from "./x13e.js";
 import { savePrice } from "./store.js";
 
 async function updateAll() {
@@ -14,6 +17,15 @@ async function updateAll() {
 
     const gold = await getGOLD();
     savePrice("GOLD", gold);
+
+    const gold = await getXEON();
+    savePrice("XEON", xeon);
+
+    const gold = await getISAC();
+    savePrice("ISAC", isac);
+
+    const gold = await getX13E();
+    savePrice("X13E", x13e);
 
     console.log("✅ Aggiornamento completato");
   } catch (err) {
