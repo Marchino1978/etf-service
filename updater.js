@@ -1,41 +1,37 @@
-import getVUAA from "./vuaa.js";
-import getVNGA80 from "./vnga80.js";
-import getGOLD from "./gold.js";
-import getXEON from "./xeon.js";
-import getISAC from "./isac.js";
-import getX13E from "./x13e.js";
+import * as scrapers from "./index.js";
 import { savePrice } from "./store.js";
 
+// Configurazione ETF: simbolo → { funzione scraper, label }
+const ETF_CONFIG = {
+  VUAA: { fn: scrapers.getVUAA, label: "S&P 500" },
+  VNGA80: { fn: scrapers.getVNGA80, label: "LifeStrategy 80" },
+  GOLD: { fn: scrapers.getGOLD, label: "Physical Gold" },
+  XEON: { fn: scrapers.getXEON, label: "XEON" },
+  ISAC: { fn: scrapers.getISAC, label: "MSCI All World" },
+  X13E: { fn: scrapers.getX13E, label: "EUR Gov Bond" }
+};
+
 async function updateAll() {
-  try {
-    // Scraping dei singoli ETF
-    const vuaa = await getVUAA();
-    savePrice("VUAA", { ...vuaa, label: "S&P 500" });
+  console.log("🔄 Avvio aggiornamento ETF...");
+  const results = [];
 
-    const vnga80 = await getVNGA80();
-    savePrice("VNGA80", { ...vnga80, label: "LifeStrategy 80" });
-
-    const gold = await getGOLD();
-    savePrice("GOLD", { ...gold, label: "Physical Gold" });
-
-    const xeon = await getXEON();
-    savePrice("XEON", { ...xeon, label: "XEON" });
-
-    const isac = await getISAC();
-    savePrice("ISAC", { ...isac, label: "MSCI All World" });
-
-    const x13e = await getX13E();
-    savePrice("X13E", { ...x13e, label: "EUR Gov Bond" });
-
-    console.log("✅ Aggiornamento completato");
-  } catch (err) {
-    // ✅ Gestione specifica errore 429
-    if (err.response && err.response.status === 429) {
-      console.warn("⚠️ Rate limit raggiunto (429), bypass: mantengo i dati esistenti nello store");
-    } else {
-      console.error("❌ Errore durante l'aggiornamento:", err.message);
+  for (const [symbol, { fn, label }] of Object.entries(ETF_CONFIG)) {
+    try {
+      const data = await fn();
+      savePrice(symbol, { ...data, label });
+      results.push({ symbol, status: "ok" });
+    } catch (err) {
+      if (err.response && err.response.status === 429) {
+        console.warn(`⚠️ ${symbol}: rate limit (429), mantengo dati esistenti`);
+        results.push({ symbol, status: "rate-limited" });
+      } else {
+        console.error(`❌ ${symbol}: errore durante scraping →`, err.message);
+        results.push({ symbol, status: "error" });
+      }
     }
   }
+
+  console.log("📊 Risultato aggiornamento:", results);
 }
 
 // 👉 Popola subito lo store all’avvio
