@@ -1,4 +1,5 @@
 import fs from "fs";
+import { safeParse } from "./utils.js"; // 🔴 IMPORT
 
 const data = {};
 let previousClose = {};
@@ -14,8 +15,8 @@ export function savePrice(symbol, values) {
   const now = new Date().toISOString();
 
   // --- Calcolo CHANGE (variazione rispetto al valore precedente in memoria) ---
-  const prev = data[symbol]?.mid ? parseFloat(data[symbol].mid.replace(",", ".")) : null;
-  const current = parseFloat(values.mid.replace(",", "."));
+  const prev = data[symbol]?.mid ? safeParse(data[symbol].mid) : null;
+  const current = safeParse(values.mid);
 
   let change = "";
   if (!isNaN(current)) {
@@ -32,7 +33,7 @@ export function savePrice(symbol, values) {
   // --- Calcolo DAILYCHANGE (variazione rispetto alla chiusura salvata) ---
   let dailyChange = "";
   if (previousClose[symbol]) {
-    const prevClose = parseFloat(previousClose[symbol].previousClose.replace(",", "."));
+    const prevClose = safeParse(previousClose[symbol].previousClose);
     if (!isNaN(prevClose) && !isNaN(current)) {
       const diff = ((current - prevClose) / prevClose) * 100;
       dailyChange = diff.toFixed(2) + "%";
@@ -42,7 +43,7 @@ export function savePrice(symbol, values) {
   // --- Salvataggio dati ---
   data[symbol] = {
     ...values,         // contiene mid, ecc.
-    label: values.label || symbol, // <-- aggiunto supporto label
+    label: values.label || symbol,
     change,
     dailyChange,
     updatedAt: now
