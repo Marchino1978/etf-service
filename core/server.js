@@ -85,7 +85,8 @@ function addDailyChange(symbol, price) {
   return { ...price, dailyChange };
 }
 
-// Avvio server
-app.listen(3000, () => {
-  console.log("🚀 Server avviato su http://localhost:3000");
+// Avvio server con porta configurabile
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server avviato su http://localhost:${PORT}`);
 });
