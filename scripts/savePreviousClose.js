@@ -2,10 +2,15 @@
 import fs from "fs";
 import path from "path";
 import axios from "axios";
+import { fileURLToPath } from "url";
+
+// Ricostruisci __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const url = "http://localhost:3000/api/etf"; // endpoint locale
-// Salva sempre nella cartella data/ del progetto
-const filePath = path.join(process.cwd(), "data", "previousClose.json");
+// Salva sempre nella cartella data/ del progetto (una cartella sopra scripts/)
+const filePath = path.join(__dirname, "../data/previousClose.json");
 
 async function savePreviousClose() {
   try {
@@ -25,7 +30,7 @@ async function savePreviousClose() {
     fs.writeFileSync(filePath, JSON.stringify(snapshot, null, 2));
     console.log("✅ previousClose.json aggiornato manualmente in:", filePath);
   } catch (err) {
-    console.error("❌ Errore nel salvataggio:", err.message);
+    console.error("❌ Errore nel salvataggio:", err); // stampa tutto l'oggetto errore
   }
 }
 
