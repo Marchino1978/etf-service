@@ -1,3 +1,4 @@
+// server.js
 import express from "express";
 import fs from "fs";
 import path from "path";
@@ -58,12 +59,12 @@ app.get("/api/etf/:symbol", (req, res) => {
   }
 });
 
-// ✅ Calcolo dailyChange usando "value" dal JSON
+// ✅ Calcolo dailyChange usando "value" dal JSON e "price" dall'endpoint
 function addDailyChange(symbol, price) {
   let dailyChange = "";
   if (previousClose[symbol]) {
-    const prev = safeParse(previousClose[symbol].value); // valore salvato
-    const current = safeParse(price.price);              // <-- usa price
+    const prev = safeParse(previousClose[symbol].value);   // valore salvato
+    const current = safeParse(price.price);                // <-- usa price
     if (!isNaN(prev) && !isNaN(current)) {
       const diff = ((current - prev) / prev) * 100;
       dailyChange = diff.toFixed(2) + "%";
