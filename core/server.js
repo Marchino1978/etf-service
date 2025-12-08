@@ -13,15 +13,25 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// 📄 Caricamento previousClose.json con log chiari
+const prevPath = path.join(__dirname, "../data/previousClose.json");
 let previousClose = {};
-try {
-  previousClose = JSON.parse(
-    fs.readFileSync(path.join(__dirname, "../data/previousClose.json"), "utf8")
-  );
-} catch (err) {
-  console.log("⚠️ Nessun previousClose.json trovato, dailyChange rimarrà vuoto");
+
+if (fs.existsSync(prevPath)) {
+  try {
+    const raw = fs.readFileSync(prevPath, "utf8");
+    previousClose = JSON.parse(raw);
+    console.log(
+      `✅ previousClose.json caricato (${Object.keys(previousClose).length} simboli)`
+    );
+  } catch (err) {
+    console.error("❌ Errore nel parsing di previousClose.json:", err.message);
+  }
+} else {
+  console.warn("⚠️ Nessun previousClose.json trovato, dailyChange rimarrà vuoto");
 }
 
+// Endpoints di servizio
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
@@ -30,6 +40,7 @@ app.get("/ping", (req, res) => {
   res.status(200).send("pong");
 });
 
+// Endpoint ETF: tutti i simboli
 app.get("/api/etf", (req, res) => {
   try {
     const allPrices = getAllPrices();
@@ -45,6 +56,7 @@ app.get("/api/etf", (req, res) => {
   }
 });
 
+// Endpoint ETF: singolo simbolo
 app.get("/api/etf/:symbol", (req, res) => {
   const symbol = req.params.symbol.toUpperCase();
   try {
@@ -64,7 +76,7 @@ function addDailyChange(symbol, price) {
   let dailyChange = "";
   if (previousClose[symbol]) {
     const prev = safeParse(previousClose[symbol].value);   // valore salvato
-    const current = safeParse(price.price);                // <-- usa price
+    const current = safeParse(price.price);                // prezzo attuale
     if (!isNaN(prev) && !isNaN(current)) {
       const diff = ((current - prev) / prev) * 100;
       dailyChange = diff.toFixed(2) + "%";
@@ -73,6 +85,7 @@ function addDailyChange(symbol, price) {
   return { ...price, dailyChange };
 }
 
+// Avvio server
 app.listen(3000, () => {
   console.log("🚀 Server avviato su http://localhost:3000");
 });
