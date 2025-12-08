@@ -2,12 +2,18 @@ import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
-const CLOSE_FILE = path.join(process.cwd(), "previousClose.json");
+// Ricostruisci __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// utils.js è in core/, quindi sali di una cartella e vai in data/
+const filePath = path.join(__dirname, "../data/previousClose.json");
 
 export function safeParse(value) {
   if (!value) return null;
-  return parseFloat(value.replace(",", "."));
+  return parseFloat(String(value).replace(",", "."));
 }
 
 export async function fetchWithRetry(url, selector, retries = 5, delay = 1500) {
@@ -25,10 +31,24 @@ export async function fetchWithRetry(url, selector, retries = 5, delay = 1500) {
   return { $, mid: null };
 }
 
+// ✅ Ora legge solo "value" (formato uniforme)
 function getPreviousClose(symbol) {
-  if (!fs.existsSync(CLOSE_FILE)) return null;
-  const closes = JSON.parse(fs.readFileSync(CLOSE_FILE));
-  return closes[symbol]?.value || null;
+  if (!fs.existsSync(CLOSE_FILE)) {
+    console.info("ℹ️ File previousClose.json non trovato:", CLOSE_FILE);
+    return null;
+  }
+  try {
+    const closes = JSON.parse(fs.readFileSync(CLOSE_FILE));
+    const raw = closes[symbol]?.value ?? null;
+    if (raw === null) {
+      console.info(`ℹ️ Nessun valore salvato per ${symbol}`);
+      return null;
+    }
+    return safeParse(raw);
+  } catch (e) {
+    console.error("❌ Errore lettura JSON:", e.message);
+    return null;
+  }
 }
 
 function saveClose(symbol, mid) {
@@ -43,6 +63,7 @@ function saveClose(symbol, mid) {
       date: now.toISOString().split("T")[0]
     };
     fs.writeFileSync(CLOSE_FILE, JSON.stringify(closes, null, 2));
+    console.log(`💾 Salvato previousClose per ${symbol}: ${mid}`);
   }
 }
 
@@ -58,6 +79,7 @@ export async function createScraper(symbol, url, itemId) {
 
   const prevClose = getPreviousClose(symbol);
   let dailyChange = "";
+
   if (prevClose !== null && mid) {
     const current = safeParse(mid);
     if (current !== null) {
@@ -65,6 +87,8 @@ export async function createScraper(symbol, url, itemId) {
       const perc = (diff / prevClose) * 100;
       dailyChange = `${diff.toFixed(4)} (${perc.toFixed(2)}%)`;
     }
+  } else {
+    console.info(`ℹ️ Nessun dailyChange disponibile per ${symbol} (manca valore precedente)`);
   }
 
   if (mid) saveClose(symbol, mid);

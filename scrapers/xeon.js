@@ -1,4 +1,4 @@
-import { createScraper } from "./utils.js";
+import { createScraper } from "../core/utils.js";
 export default function getXEON() {
   return createScraper("XEON", "https://www.ls-tc.de/de/etf/58124", "58124");
 }

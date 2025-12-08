@@ -1,5 +1,5 @@
-import * as scrapers from "./index.js";
-import { savePrice } from "./store.js";
+import * as scrapers from "../core/index.js";   // index.js dentro core/
+import { savePrice } from "../core/store.js";
 
 // Configurazione ETF: simbolo → { funzione scraper, label }
 const ETF_CONFIG = {

@@ -1,4 +1,4 @@
-import { createScraper } from "./utils.js";
+import { createScraper } from "../core/utils.js";
 export default function getX13E() {
   return createScraper("X13E", "https://www.ls-tc.de/de/etf/46985", "46985");
 }

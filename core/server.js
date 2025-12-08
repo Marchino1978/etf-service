@@ -1,14 +1,14 @@
 import express from "express";
 import fs from "fs";
-import { getPrice, getAllPrices } from "./store.js";
-import { safeParse } from "./utils.js"; // 🔴 IMPORT
-import "./updater.js";
+import { getPrice, getAllPrices } from "../core/store.js";
+import { safeParse } from "../core/utils.js"; // 🔴 IMPORT
+import "../core/updater.js";
 
 const app = express();
 
 let previousClose = {};
 try {
-  previousClose = JSON.parse(fs.readFileSync("./previousClose.json", "utf8"));
+  previousClose = JSON.parse(fs.readFileSync("../data/previousClose.json", "utf8"));
 } catch (err) {
   console.log("⚠️ Nessun previousClose.json trovato, dailyChange rimarrà vuoto");
 }
