@@ -16,12 +16,12 @@ function saveClose(symbol, mid) {
   const hour = now.getHours();
 
   // Broker chiude alle 23:00 → salvo ultimo prezzo come chiusura
-  if (hour >= 23) {
+  if (hour >= 23 && mid) { // 🔴 MODIFICATO: controllo che mid esista
     const closes = fs.existsSync(CLOSE_FILE)
       ? JSON.parse(fs.readFileSync(CLOSE_FILE))
       : {};
     closes[symbol] = {
-      value: parseFloat(mid.replace(",", ".")),
+      value: safeParse(mid), // 🔴 MODIFICATO: uso safeParse
       date: now.toISOString().split("T")[0]
     };
     fs.writeFileSync(CLOSE_FILE, JSON.stringify(closes, null, 2));
@@ -44,6 +44,12 @@ async function fetchWithRetry(url, retries = 3, delay = 1000) {
   return { $, mid: null };
 }
 
+// 🔴 AGGIUNTO: funzione safeParse per evitare errori su undefined
+function safeParse(value) {
+  if (!value) return null;
+  return parseFloat(value.replace(",", "."));
+}
+
 export default async function getVNGA80() {
   const url = "https://www.ls-tc.de/en/etf/1376226";
 
@@ -57,7 +63,7 @@ export default async function getVNGA80() {
   const prevClose = getPreviousClose("VNGA80");
   let dailyChange = "";
   if (prevClose !== null && mid) {
-    const current = parseFloat(mid.replace(",", "."));
+    const current = safeParse(mid); // 🔴 MODIFICATO: uso safeParse
     const diff = current - prevClose;
     const perc = (diff / prevClose) * 100;
     dailyChange = `${diff.toFixed(4)} (${perc.toFixed(2)}%)`;
@@ -66,15 +72,15 @@ export default async function getVNGA80() {
   if (mid) saveClose("VNGA80", mid);
 
   return {
-    source: "LS-TC",              // 🔴 AGGIUNTO
-    symbol: "VNGA80",             // 🔴 AGGIUNTO
-    price: mid ? parseFloat(mid.replace(",", ".")) : null, // 🔴 AGGIUNTO
-    bid: bid ? parseFloat(bid.replace(",", ".")) : null,
-    ask: ask ? parseFloat(ask.replace(",", ".")) : null,
+    source: "LS-TC",              
+    symbol: "VNGA80",             
+    price: safeParse(mid),        // 🔴 MODIFICATO: uso safeParse
+    bid: safeParse(bid),          // 🔴 MODIFICATO: uso safeParse
+    ask: safeParse(ask),          // 🔴 MODIFICATO: uso safeParse
     change,
     dailyChange,
-    currency: "EUR",              // 🔴 AGGIUNTO
-    status: mid ? "open" : "unavailable" // 🔴 AGGIUNTO
+    currency: "EUR",              
+    status: mid ? "open" : "unavailable" 
   };
 }
 
