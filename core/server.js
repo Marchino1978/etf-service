@@ -1,14 +1,22 @@
 import express from "express";
 import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import { getPrice, getAllPrices } from "../core/store.js";
-import { safeParse } from "../core/utils.js"; // 🔴 IMPORT
+import { safeParse } from "../core/utils.js";
 import "../core/updater.js";
+
+// Ricostruisci __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
 let previousClose = {};
 try {
-  previousClose = JSON.parse(fs.readFileSync("../data/previousClose.json", "utf8"));
+  previousClose = JSON.parse(
+    fs.readFileSync(path.join(__dirname, "../data/previousClose.json"), "utf8")
+  );
 } catch (err) {
   console.log("⚠️ Nessun previousClose.json trovato, dailyChange rimarrà vuoto");
 }
@@ -50,11 +58,11 @@ app.get("/api/etf/:symbol", (req, res) => {
   }
 });
 
-// ✅ Uso safeParse invece di .replace
+// ✅ Calcolo dailyChange usando "value" dal JSON
 function addDailyChange(symbol, price) {
   let dailyChange = "";
   if (previousClose[symbol]) {
-    const prev = safeParse(previousClose[symbol].previousClose);
+    const prev = safeParse(previousClose[symbol].value); // <-- corretto
     const mid = safeParse(price.mid);
     if (!isNaN(prev) && !isNaN(mid)) {
       const diff = ((mid - prev) / prev) * 100;
