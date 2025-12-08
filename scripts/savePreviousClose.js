@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const url = "http://localhost:3000/api/etf"; // endpoint locale
-// Salva sempre nella cartella data/ del progetto (una cartella sopra scripts/)
+// Salva sempre nella cartella data/ del progetto
 const filePath = path.join(__dirname, "../data/previousClose.json");
 
 async function savePreviousClose() {
@@ -21,16 +21,21 @@ async function savePreviousClose() {
     const today = new Date().toISOString().split("T")[0];
 
     for (const key in data) {
-      snapshot[key] = {
-        value: parseFloat(String(data[key].mid).replace(",", ".")),
-        date: today
-      };
+      const price = data[key]?.price; // usa price invece di mid
+      if (price && !isNaN(parseFloat(price))) {
+        snapshot[key] = {
+          value: parseFloat(price),
+          date: today
+        };
+      } else {
+        console.warn(`⚠️ Nessun valore valido per ${key}, salto`);
+      }
     }
 
     fs.writeFileSync(filePath, JSON.stringify(snapshot, null, 2));
     console.log("✅ previousClose.json aggiornato manualmente in:", filePath);
   } catch (err) {
-    console.error("❌ Errore nel salvataggio:", err); // stampa tutto l'oggetto errore
+    console.error("❌ Errore nel salvataggio:", err);
   }
 }
 
