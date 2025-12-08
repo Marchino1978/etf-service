@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // utils.js è in core/, quindi sali di una cartella e vai in data/
-const filePath = path.join(__dirname, "../data/previousClose.json");
+const CLOSE_FILE = path.join(__dirname, "../data/previousClose.json");
 
 export function safeParse(value) {
   if (!value) return null;
