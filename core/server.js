@@ -28,7 +28,7 @@ if (fs.existsSync(prevPath)) {
     console.error("❌ Errore nel parsing di previousClose.json:", err.message);
   }
 } else {
-  console.warn("⚠️ Nessun previousClose.json trovato, dailyChange rimarrà vuoto");
+  console.info("ℹ️ previousClose.json non trovato all'avvio, verrà generato dall'updater");
 }
 
 // Endpoints di servizio
