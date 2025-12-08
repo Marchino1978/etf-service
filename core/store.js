@@ -1,14 +1,29 @@
 import fs from "fs";
-import { safeParse } from "./utils.js"; // 🔴 IMPORT
+import path from "path";
+import { fileURLToPath } from "url";
+import { safeParse } from "./utils.js";
+
+// Ricostruisci __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const data = {};
 let previousClose = {};
 
-// Carica i valori di chiusura dal file, se esiste
-try {
-  previousClose = JSON.parse(fs.readFileSync("./previousClose.json", "utf8"));
-} catch (err) {
-  console.log("⚠️ Nessun previousClose.json trovato, dailyChange rimarrà vuoto");
+// 📄 Carica i valori di chiusura dal file, se esiste
+const prevPath = path.join(__dirname, "../data/previousClose.json");
+
+if (fs.existsSync(prevPath)) {
+  try {
+    previousClose = JSON.parse(fs.readFileSync(prevPath, "utf8"));
+    console.log(
+      `✅ previousClose.json caricato (${Object.keys(previousClose).length} simboli)`
+    );
+  } catch (err) {
+    console.error("❌ Errore nel parsing di previousClose.json:", err.message);
+  }
+} else {
+  console.info("ℹ️ previousClose.json non trovato all'avvio, verrà generato dall'updater");
 }
 
 export function savePrice(symbol, values) {
