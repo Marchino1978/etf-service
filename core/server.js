@@ -62,10 +62,10 @@ app.get("/api/etf/:symbol", (req, res) => {
 function addDailyChange(symbol, price) {
   let dailyChange = "";
   if (previousClose[symbol]) {
-    const prev = safeParse(previousClose[symbol].value); // <-- corretto
-    const mid = safeParse(price.mid);
-    if (!isNaN(prev) && !isNaN(mid)) {
-      const diff = ((mid - prev) / prev) * 100;
+    const prev = safeParse(previousClose[symbol].value); // valore salvato
+    const current = safeParse(price.price);              // <-- usa price
+    if (!isNaN(prev) && !isNaN(current)) {
+      const diff = ((current - prev) / prev) * 100;
       dailyChange = diff.toFixed(2) + "%";
     }
   }
