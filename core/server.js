@@ -40,6 +40,21 @@ app.get("/ping", (req, res) => {
   res.status(200).send("pong");
 });
 
+// 📄 Endpoint per leggere direttamente previousClose.json
+app.get("/api/previous-close", (req, res) => {
+  try {
+    if (!fs.existsSync(prevPath)) {
+      return res.status(404).json({ error: "previousClose.json non trovato" });
+    }
+    const raw = fs.readFileSync(prevPath, "utf8");
+    const data = JSON.parse(raw);
+    res.json(data);
+  } catch (err) {
+    console.error("❌ Errore lettura previousClose.json:", err.message);
+    res.status(500).json({ error: "Errore interno" });
+  }
+});
+
 // Endpoint ETF: tutti i simboli
 app.get("/api/etf", (req, res) => {
   try {
