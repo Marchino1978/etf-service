@@ -14,7 +14,6 @@ function getPreviousClose(symbol) {
 function saveClose(symbol, mid) {
   const now = new Date();
   const hour = now.getHours();
-  const minute = now.getMinutes();
 
   // Broker chiude alle 23:00 → salvo ultimo prezzo come chiusura
   if (hour >= 23) {
@@ -29,36 +28,53 @@ function saveClose(symbol, mid) {
   }
 }
 
+// 🔴 AGGIUNTO: funzione helper con retry
+async function fetchWithRetry(url, retries = 3, delay = 1000) {
+  for (let i = 0; i < retries; i++) {
+    const res = await fetch(url);
+    const html = await res.text();
+    const $ = cheerio.load(html);
+
+    const mid = $('span[source="lightstreamer"][table="quotes"][item="1045562@1"][field="mid"]').text().trim();
+    if (mid) {
+      return { $, mid };
+    }
+    await new Promise(r => setTimeout(r, delay)); // 🔴 AGGIUNTO: pausa tra i tentativi
+  }
+  return { $, mid: null };
+}
+
 export default async function getVUAA() {
   const url = "https://www.ls-tc.de/de/etf/1045562";
-  const res = await fetch(url);
-  const html = await res.text();
-  const $ = cheerio.load(html);
 
-  const mid = $('span[source="lightstreamer"][table="quotes"][item="1045562@1"][field="mid"]').text().trim();
+  // 🔴 MODIFICATO: uso fetchWithRetry invece di fetch diretto
+  const { $, mid } = await fetchWithRetry(url);
+
   const bid = $('span[source="lightstreamer"][table="quotes"][item="1045562@1"][field="bid"]').text().trim();
   const ask = $('span[source="lightstreamer"][table="quotes"][item="1045562@1"][field="ask"]').text().trim();
   const change = $('span[source="lightstreamer"][table="quotes"][item="1045562@1"][field="change"]').text().trim();
 
-  // Calcolo dailyChange rispetto alla chiusura salvata
   const prevClose = getPreviousClose("VUAA");
   let dailyChange = "";
-  if (prevClose !== null) {
+  if (prevClose !== null && mid) {
     const current = parseFloat(mid.replace(",", "."));
     const diff = current - prevClose;
     const perc = (diff / prevClose) * 100;
     dailyChange = `${diff.toFixed(4)} (${perc.toFixed(2)}%)`;
   }
 
-  // Salvo chiusura se siamo a fine giornata
-  saveClose("VUAA", mid);
+  if (mid) saveClose("VUAA", mid);
 
   return {
-    mid,
-    bid,
-    ask,
-    change,       // variazione intraday
-    dailyChange   // variazione rispetto alla chiusura di ieri
+    source: "LS-TC",              // 🔴 AGGIUNTO
+    symbol: "VUAA",               // 🔴 AGGIUNTO
+    price: mid ? parseFloat(mid.replace(",", ".")) : null, // 🔴 AGGIUNTO
+    bid: bid ? parseFloat(bid.replace(",", ".")) : null,
+    ask: ask ? parseFloat(ask.replace(",", ".")) : null,
+    change,
+    dailyChange,
+    currency: "EUR",              // 🔴 AGGIUNTO
+    status: mid ? "open" : "unavailable" // 🔴 AGGIUNTO
   };
 }
 
