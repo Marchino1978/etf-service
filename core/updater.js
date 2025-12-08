@@ -3,12 +3,12 @@ import { savePrice } from "../core/store.js";
 
 // Configurazione ETF: simbolo → { funzione scraper, label }
 const ETF_CONFIG = {
-  VUAA: { fn: scrapers.getVUAA, label: "S&P 500" },
+  VUAA:   { fn: scrapers.getVUAA,   label: "S&P 500" },
   VNGA80: { fn: scrapers.getVNGA80, label: "LifeStrategy 80" },
-  GOLD: { fn: scrapers.getGOLD, label: "Physical Gold" },
-  XEON: { fn: scrapers.getXEON, label: "XEON" },
-  ISAC: { fn: scrapers.getISAC, label: "MSCI All World" },
-  X13E: { fn: scrapers.getX13E, label: "EUR Gov Bond" }
+  GOLD:   { fn: scrapers.getGOLD,   label: "Physical Gold" },
+  XEON:   { fn: scrapers.getXEON,   label: "XEON" },
+  ISAC:   { fn: scrapers.getISAC,   label: "MSCI All World" },
+  X13E:   { fn: scrapers.getX13E,   label: "EUR Gov Bond" }
 };
 
 async function updateAll() {
@@ -25,7 +25,7 @@ async function updateAll() {
         console.warn(`⚠️ ${symbol}: rate limit (429), mantengo dati esistenti`);
         results.push({ symbol, status: "rate-limited" });
       } else {
-        console.error(`❌ ${symbol}: errore durante scraping →`, err.message);
+        console.error(`❌ ${symbol}: errore durante scraping → ${err.message}`);
         results.push({ symbol, status: "error" });
       }
     }
@@ -35,7 +35,10 @@ async function updateAll() {
 }
 
 // 👉 Popola subito lo store all’avvio
-updateAll();
+(async () => {
+  console.info("ℹ️ Inizializzazione updater: verranno generati/aggiornati i dati ETF");
+  await updateAll();
+})();
 
 // 👉 Aggiorna ogni 15 minuti
 setInterval(updateAll, 15 * 60 * 1000);
