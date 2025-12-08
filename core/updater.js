@@ -31,7 +31,10 @@ async function updateAll() {
     }
   }
 
-  console.log("📊 Risultato aggiornamento:", results);
+  // 📊 Log riepilogo solo se non siamo in modalità test
+  if (process.env.NODE_ENV !== "test") {
+    console.log("📊 Risultato aggiornamento:", results);
+  }
 }
 
 // 👉 Popola subito lo store all’avvio
