@@ -7,8 +7,10 @@ const ETF_CONFIG = {
   VNGA80: { fn: scrapers.getVNGA80, label: "LifeStrategy 80" },
   GOLD:   { fn: scrapers.getGOLD,   label: "Physical Gold" },
   XEON:   { fn: scrapers.getXEON,   label: "XEON" },
-  ISAC:   { fn: scrapers.getISAC,   label: "MSCI All World" },
-  X13E:   { fn: scrapers.getX13E,   label: "EUR Gov Bond" }
+//  ISAC:   { fn: scrapers.getISAC,   label: "MSCI All World" },
+//  X13E:   { fn: scrapers.getX13E,   label: "EUR Gov Bond" }
+  VWCE:   { fn: scrapers.getVWCE,   label: "FTSE All World" }
+  IUSQ:   { fn: scrapers.getIUSQ,   label: "MSCI All World" }
 };
 
 async function updateAll() {
