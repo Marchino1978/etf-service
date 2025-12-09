@@ -1,7 +1,7 @@
 // CORE/marketStatus.js
 import express from "express";
 import fs from "fs";
-import * as scrapers from "../scrapers/index.js"; // importa TUTTI gli scraper
+import * as scrapers from "../core/index.js"; // importa TUTTI gli scraper
 import Holidays from "date-holidays";
 
 const router = express.Router();
