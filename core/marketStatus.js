@@ -7,7 +7,7 @@ import Holidays from "date-holidays";
 const router = express.Router();
 const hd = new Holidays("IT");
 
-// Orari di apertura/chiusura mercato
+// Orari di apertura/chiusura mercato (ora locale CET)
 const MARKET_OPEN = { hour: 7, minute: 30 };
 const MARKET_CLOSE = { hour: 23, minute: 0 };
 
@@ -30,6 +30,7 @@ function isMarketOpen(now) {
 }
 
 router.get("/market-status", async (req, res) => {
+  // Usa ora locale CET
   const now = new Date();
   const status = isMarketOpen(now) ? "APERTO" : "CHIUSO";
 
@@ -60,7 +61,8 @@ router.get("/market-status", async (req, res) => {
   }
 
   res.json({
-    datetime: now.toISOString(),
+    // Ora locale in formato leggibile
+    datetime: now.toLocaleString("it-IT", { timeZone: "Europe/Rome" }),
     status,
     values
   });
