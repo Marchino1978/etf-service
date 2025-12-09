@@ -53,7 +53,18 @@ router.get("/market-status", async (req, res) => {
     try {
       // legge il file previousClose.json
       const raw = fs.readFileSync("./data/previousClose.json", "utf8");
-      values = { source: "previous-close", data: JSON.parse(raw) };
+      const parsed = JSON.parse(raw);
+
+      // Se è già un array lo uso direttamente, se è un oggetto lo trasformo
+      const data = Array.isArray(parsed)
+        ? parsed
+        : Object.entries(parsed).map(([symbol, { value, date }]) => ({
+            symbol,
+            value,
+            date
+          }));
+
+      values = { source: "previous-close", data };
     } catch (err) {
       console.error("Errore lettura previousClose.json:", err);
       values = { source: "previous-close", data: [] };
