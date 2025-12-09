@@ -19,14 +19,20 @@ function isMarketOpen(now) {
   const day = now.getDay(); // 0=dom, 6=sab
   if (day === 0 || day === 6) return false;
 
-  // Fascia oraria
-  const openTime = new Date(now);
-  openTime.setHours(MARKET_OPEN.hour, MARKET_OPEN.minute, 0, 0);
+  const hour = now.getHours();
+  const minute = now.getMinutes();
 
-  const closeTime = new Date(now);
-  closeTime.setHours(MARKET_CLOSE.hour, MARKET_CLOSE.minute, 0, 0);
+  // Apertura
+  if (hour < MARKET_OPEN.hour || (hour === MARKET_OPEN.hour && minute < MARKET_OPEN.minute)) {
+    return false;
+  }
 
-  return now >= openTime && now <= closeTime;
+  // Chiusura
+  if (hour > MARKET_CLOSE.hour || (hour === MARKET_CLOSE.hour && minute >= MARKET_CLOSE.minute)) {
+    return false;
+  }
+
+  return true;
 }
 
 router.get("/market-status", async (req, res) => {
