@@ -52,7 +52,7 @@ router.get("/market-status", async (req, res) => {
   } else {
     try {
       // legge il file previousClose.json
-      const raw = fs.readFileSync("./DATA/previousClose.json", "utf8");
+      const raw = fs.readFileSync("./data/previousClose.json", "utf8");
       values = { source: "previous-close", data: JSON.parse(raw) };
     } catch (err) {
       console.error("Errore lettura previousClose.json:", err);

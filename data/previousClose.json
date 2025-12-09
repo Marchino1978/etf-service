@@ -1,34 +1,32 @@
-{
-  "VUAA": {
+[
+  {
+    "symbol": "VUAA",
     "value": 112.9675,
     "date": "2025-12-09"
   },
-  "VNGA80": {
+  {
+    "symbol": "VNGA80",
     "value": 39.16,
     "date": "2025-12-09"
   },
-  "GOLD": {
+  {
+    "symbol": "GOLD",
     "value": 143.44,
     "date": "2025-12-09"
   },
-  "XEON": {
+  {
+    "symbol": "XEON",
     "value": 147.855,
     "date": "2025-12-09"
   },
-  "ISAC": {
-    "value": 92.955,
-    "date": "2025-12-08"
-  },
-  "X13E": {
-    "value": 173.475,
-    "date": "2025-12-08"
-  },
-  "VWCE": {
+  {
+    "symbol": "VWCE",
     "value": 144.68,
     "date": "2025-12-09"
   },
-  "IUSQ": {
+  {
+    "symbol": "IUSQ",
     "value": 92.67,
     "date": "2025-12-09"
   }
-}
+]
