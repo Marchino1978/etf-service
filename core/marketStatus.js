@@ -19,8 +19,13 @@ function isMarketOpen(now) {
   const day = now.getDay(); // 0=dom, 6=sab
   if (day === 0 || day === 6) return false;
 
-  const hour = now.getHours();
-  const minute = now.getMinutes();
+  // Ora locale CET forzata
+  const hour = parseInt(
+    now.toLocaleString("it-IT", { timeZone: "Europe/Rome", hour: "numeric" })
+  );
+  const minute = parseInt(
+    now.toLocaleString("it-IT", { timeZone: "Europe/Rome", minute: "numeric" })
+  );
 
   // Apertura
   if (hour < MARKET_OPEN.hour || (hour === MARKET_OPEN.hour && minute < MARKET_OPEN.minute)) {
