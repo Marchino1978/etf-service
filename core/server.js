@@ -7,6 +7,9 @@ import { getPrice, getAllPrices } from "../core/store.js";
 import { safeParse } from "../core/utils.js";
 import "../core/updater.js";
 
+// 👉 importa la nuova route market-status
+import marketStatusRoute from "../core/marketStatus.js";
+
 // Ricostruisci __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -99,6 +102,9 @@ function addDailyChange(symbol, price) {
   }
   return { ...price, dailyChange };
 }
+
+// 👉 monta la nuova route market-status
+app.use("/api", marketStatusRoute);
 
 // Avvio server con porta configurabile
 const PORT = process.env.PORT || 3000;
