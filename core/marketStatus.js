@@ -12,11 +12,14 @@ const MARKET_OPEN = { hour: 7, minute: 30 };
 const MARKET_CLOSE = { hour: 23, minute: 0 };
 
 function isMarketOpen(now) {
+  // Festività italiane
   if (hd.isHoliday(now)) return false;
 
+  // Weekend
   const day = now.getDay(); // 0=dom, 6=sab
   if (day === 0 || day === 6) return false;
 
+  // Fascia oraria
   const openTime = new Date(now);
   openTime.setHours(MARKET_OPEN.hour, MARKET_OPEN.minute, 0, 0);
 
@@ -32,15 +35,25 @@ router.get("/market-status", async (req, res) => {
 
   let values;
   if (status === "APERTO") {
-    // esegue tutti gli scraper esportati da index.js
-    const data = await Promise.all(
-      Object.values(scrapers).map(scraperFn => scraperFn())
-    );
-    values = { source: "etf", data };
+    try {
+      // esegue tutti gli scraper esportati da index.js
+      const data = await Promise.all(
+        Object.values(scrapers).map(scraperFn => scraperFn())
+      );
+      values = { source: "etf", data };
+    } catch (err) {
+      console.error("Errore scraper:", err);
+      values = { source: "etf", data: [] };
+    }
   } else {
-    // legge il file previousClose.json
-    const raw = fs.readFileSync("./DATA/previousClose.json");
-    values = { source: "previous-close", data: JSON.parse(raw) };
+    try {
+      // legge il file previousClose.json
+      const raw = fs.readFileSync("./DATA/previousClose.json", "utf8");
+      values = { source: "previous-close", data: JSON.parse(raw) };
+    } catch (err) {
+      console.error("Errore lettura previousClose.json:", err);
+      values = { source: "previous-close", data: [] };
+    }
   }
 
   res.json({
