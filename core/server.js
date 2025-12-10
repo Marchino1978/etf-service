@@ -12,7 +12,6 @@ import marketStatusRoute from "../core/marketStatus.js";
 // 👉 importa la nuova route save-previous-close
 import savePreviousCloseRoute from "../routes/savePreviousClose.js";
 
-// Ricostruisci __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -20,14 +19,14 @@ const app = express();
 
 // 📄 Caricamento previousClose.json con log chiari
 const prevPath = path.join(__dirname, "../data/previousClose.json");
-let previousClose = {};
+let previousClose = { timestamp: null, data: [] };
 
 if (fs.existsSync(prevPath)) {
   try {
     const raw = fs.readFileSync(prevPath, "utf8");
     previousClose = JSON.parse(raw);
     console.log(
-      `✅ previousClose.json caricato (${Object.keys(previousClose).length} simboli)`
+      `✅ previousClose.json caricato (${previousClose.data?.length || 0} simboli, timestamp ${previousClose.timestamp})`
     );
   } catch (err) {
     console.error("❌ Errore nel parsing di previousClose.json:", err.message);
@@ -53,7 +52,7 @@ app.get("/api/previous-close", (req, res) => {
     }
     const raw = fs.readFileSync(prevPath, "utf8");
     const data = JSON.parse(raw);
-    res.json(data);
+    res.json(data); // 👉 restituisce { timestamp, data: [...] }
   } catch (err) {
     console.error("❌ Errore lettura previousClose.json:", err.message);
     res.status(500).json({ error: "Errore interno" });
@@ -94,12 +93,15 @@ app.get("/api/etf/:symbol", (req, res) => {
 // ✅ Calcolo dailyChange usando "value" dal JSON e "price" dall'endpoint
 function addDailyChange(symbol, price) {
   let dailyChange = "";
-  if (previousClose[symbol]) {
-    const prev = safeParse(previousClose[symbol].value);   // valore salvato
-    const current = safeParse(price.price);                // prezzo attuale
-    if (!isNaN(prev) && !isNaN(current)) {
-      const diff = ((current - prev) / prev) * 100;
-      dailyChange = diff.toFixed(2) + "%";
+  if (previousClose.data) {
+    const prevObj = previousClose.data.find((item) => item.symbol === symbol);
+    if (prevObj) {
+      const prev = safeParse(prevObj.value);
+      const current = safeParse(price.price);
+      if (!isNaN(prev) && !isNaN(current)) {
+        const diff = ((current - prev) / prev) * 100;
+        dailyChange = diff.toFixed(2) + "%";
+      }
     }
   }
   return { ...price, dailyChange };
