@@ -1,16 +1,21 @@
 #!/bin/bash
-# Script veloce per push su GitHub
-# Usa sempre "fix" come messaggio di commit
+# Script per riallineare e pushare su GitHub
 
-# Aggiunge tutte le modifiche (nuovi, modificati, eliminati)
-git add --all
-
-# Crea il commit con messaggio fisso
-git commit -m "fix"
+# Vai nella cartella del progetto (relativa allo script stesso)
+cd "$(dirname "$0")" || exit 1
 
 # Determina il branch corrente
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-# Fa il push sul branch corrente
+# Riallinea con il remoto
+git pull origin "$CURRENT_BRANCH" --rebase
+
+# Aggiunge tutte le modifiche (nuovi, modificati, eliminati)
+git add --all
+
+# Commit fisso "fix"
+git commit -m "fix" || echo "Nessuna modifica da commitare"
+
+# Push sul branch corrente
 echo "🚀 Push su branch: $CURRENT_BRANCH"
 git push origin "$CURRENT_BRANCH"
