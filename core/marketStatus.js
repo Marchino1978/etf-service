@@ -63,7 +63,11 @@ router.get("/market-status", async (req, res) => {
           if (result?.price && prev) {
             dailyChange = ((result.price - prev) / prev * 100).toFixed(2);
           }
-          return { symbol, label, ...result, dailyChange };
+
+          // Rimuovo il campo "change" se presente
+          const { change, ...rest } = result;
+
+          return { symbol, label, ...rest, dailyChange };
         })
       );
       values = { source: "etf", data };
