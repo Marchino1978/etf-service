@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Endpoint sorgente: i prezzi correnti
-const url = "http://localhost:3000/api/etf";
+const url = "https://etf-service.onrender.com/api/etf";
 // Percorso del file previousClose.json
 const filePath = path.join(__dirname, "../data/previousClose.json");
 
