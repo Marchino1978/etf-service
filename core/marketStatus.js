@@ -57,11 +57,11 @@ router.get("/market-status", async (req, res) => {
     try {
       const data = await Promise.all(
         Object.entries(etfs).map(async ([symbol, { fn, label }]) => {
-          const result = await fn(); // deve contenere almeno lastPrice
+          const result = await fn(); // deve contenere almeno price
           const prev = getPreviousClose(symbol);
           let dailyChange = null;
-          if (result?.lastPrice && prev) {
-            dailyChange = ((result.lastPrice - prev) / prev * 100).toFixed(2);
+          if (result?.price && prev) {
+            dailyChange = ((result.price - prev) / prev * 100).toFixed(2);
           }
           return { symbol, label, ...result, dailyChange };
         })
