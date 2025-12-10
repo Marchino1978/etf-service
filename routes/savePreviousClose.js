@@ -11,8 +11,10 @@ const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Endpoint sorgente: i prezzi correnti
-const url = "https://etf-service.onrender.com/api/etf";
+// Usa BASE_URL se disponibile (Render), altrimenti localhost (sviluppo)
+const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+const url = `${baseUrl}/api/etf`;
+
 // Percorso del file previousClose.json
 const filePath = path.join(__dirname, "../data/previousClose.json");
 
@@ -42,7 +44,7 @@ router.get("/save-previous-close", async (req, res) => {
 
     res.json({ status: "ok", updated: snapshot.length });
   } catch (err) {
-    console.error("❌ Errore nel salvataggio:", err);
+    console.error("❌ Errore nel salvataggio:", err.message);
     res.status(500).json({ status: "error", message: err.message });
   }
 });
