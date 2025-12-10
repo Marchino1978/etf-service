@@ -9,6 +9,8 @@ import "../core/updater.js";
 
 // 👉 importa la nuova route market-status
 import marketStatusRoute from "../core/marketStatus.js";
+// 👉 importa la nuova route save-previous-close
+import savePreviousCloseRoute from "../routes/savePreviousClose.js";
 
 // Ricostruisci __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -103,8 +105,9 @@ function addDailyChange(symbol, price) {
   return { ...price, dailyChange };
 }
 
-// 👉 monta la nuova route market-status
+// 👉 monta le route
 app.use("/api", marketStatusRoute);
+app.use("/api", savePreviousCloseRoute);
 
 // Avvio server con porta configurabile
 const PORT = process.env.PORT || 3000;
