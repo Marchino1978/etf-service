@@ -12,14 +12,11 @@ const MARKET_OPEN = { hour: 7, minute: 30 };
 const MARKET_CLOSE = { hour: 23, minute: 0 };
 
 function isMarketOpen(now) {
-  // Festività italiane
   if (hd.isHoliday(now)) return false;
 
-  // Weekend
   const day = now.getDay(); // 0=dom, 6=sab
   if (day === 0 || day === 6) return false;
 
-  // Ora locale CET forzata
   const hour = parseInt(
     now.toLocaleString("it-IT", { timeZone: "Europe/Rome", hour: "numeric" })
   );
@@ -27,32 +24,46 @@ function isMarketOpen(now) {
     now.toLocaleString("it-IT", { timeZone: "Europe/Rome", minute: "numeric" })
   );
 
-  // Apertura
   if (hour < MARKET_OPEN.hour || (hour === MARKET_OPEN.hour && minute < MARKET_OPEN.minute)) {
     return false;
   }
-
-  // Chiusura
   if (hour > MARKET_CLOSE.hour || (hour === MARKET_CLOSE.hour && minute >= MARKET_CLOSE.minute)) {
     return false;
   }
-
   return true;
 }
 
+// Helper per leggere previousClose.json
+function getPreviousClose(symbol) {
+  try {
+    const raw = fs.readFileSync("./data/previousClose.json", "utf8");
+    const parsed = JSON.parse(raw);
+    const entry = Array.isArray(parsed)
+      ? parsed.find(item => item.symbol === symbol)
+      : parsed[symbol];
+    return entry ? entry.value : null;
+  } catch (err) {
+    console.error("Errore lettura previousClose.json:", err);
+    return null;
+  }
+}
+
 router.get("/market-status", async (req, res) => {
-  // Usa ora locale CET
   const now = new Date();
   const status = isMarketOpen(now) ? "APERTO" : "CHIUSO";
 
   let values;
   if (status === "APERTO") {
     try {
-      // esegue tutti gli scraper definiti in etfs
       const data = await Promise.all(
         Object.entries(etfs).map(async ([symbol, { fn, label }]) => {
-          const result = await fn();
-          return { symbol, label, ...result };
+          const result = await fn(); // deve contenere almeno lastPrice
+          const prev = getPreviousClose(symbol);
+          let dailyChange = null;
+          if (result?.lastPrice && prev) {
+            dailyChange = ((result.lastPrice - prev) / prev * 100).toFixed(2);
+          }
+          return { symbol, label, ...result, dailyChange };
         })
       );
       values = { source: "etf", data };
@@ -62,11 +73,8 @@ router.get("/market-status", async (req, res) => {
     }
   } else {
     try {
-      // legge il file previousClose.json
       const raw = fs.readFileSync("./data/previousClose.json", "utf8");
       const parsed = JSON.parse(raw);
-
-      // Se è già un array lo uso direttamente, se è un oggetto lo trasformo
       const data = Array.isArray(parsed)
         ? parsed
         : Object.entries(parsed).map(([symbol, { value, date }]) => ({
@@ -74,7 +82,6 @@ router.get("/market-status", async (req, res) => {
             value,
             date
           }));
-
       values = { source: "previous-close", data };
     } catch (err) {
       console.error("Errore lettura previousClose.json:", err);
@@ -83,7 +90,6 @@ router.get("/market-status", async (req, res) => {
   }
 
   res.json({
-    // Ora locale in formato leggibile
     datetime: now.toLocaleString("it-IT", { timeZone: "Europe/Rome" }),
     status,
     values
