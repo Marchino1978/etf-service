@@ -40,3 +40,7 @@ pnpm-debug.log*
 Thumbs.db
 *.swp
 *.tmp
+
+# TXT & CSV files
+*.txt
+*.csv
