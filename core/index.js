@@ -8,6 +8,8 @@ import getVWCE from "../scrapers/vwce.js";
 // import getX13E from "../scrapers/x13e.js";
 // import getIUSQ from "../scrapers/iusq.js";
 import getSWDA from "../scrapers/swda.js";
+import getXUSE from "../scrapers/xuse.js";
+import getEXUS from "../scrapers/exus.js";
 
 // Mappa ETF centralizzata: simbolo → { funzione scraper, label }
 export const etfs = {
@@ -19,5 +21,7 @@ export const etfs = {
   // ISAC:   { fn: getISAC,   label: "MSCI All World" },
   // X13E:   { fn: getX13E,   label: "EUR Gov Bond" },
   // IUSQ:   { fn: getIUSQ,   label: "MSCI All World" },
-  SWDA:   { fn: getSWDA,   label: "Core MSCI World" }
+  SWDA:   { fn: getSWDA,   label: "Core MSCI World" },
+  XUSE:   { fn: getXUSE,   label: "MSCI Worls Ex-USA" },
+  EXUS:   { fn: getEXUS,   label: "MSCI Worls Ex-USA" }
 };
