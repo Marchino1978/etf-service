@@ -1,32 +1,35 @@
-[
-  {
-    "symbol": "VUAA",
-    "value": 112.9675,
-    "date": "2025-12-09"
-  },
-  {
-    "symbol": "VNGA80",
-    "value": 39.16,
-    "date": "2025-12-09"
-  },
-  {
-    "symbol": "GOLD",
-    "value": 143.44,
-    "date": "2025-12-09"
-  },
-  {
-    "symbol": "XEON",
-    "value": 147.855,
-    "date": "2025-12-09"
-  },
-  {
-    "symbol": "VWCE",
-    "value": 144.68,
-    "date": "2025-12-09"
-  },
-  {
-    "symbol": "IUSQ",
-    "value": 92.67,
-    "date": "2025-12-09"
-  }
-]
+{
+  "timestamp": "2025-12-12T21:59:50.919Z",
+  "data": [
+    {
+      "symbol": "VUAA",
+      "value": 111.7025,
+      "date": "2025-12-12"
+    },
+    {
+      "symbol": "VNGA80",
+      "value": 38.9775,
+      "date": "2025-12-12"
+    },
+    {
+      "symbol": "GOLD",
+      "value": 145.385,
+      "date": "2025-12-12"
+    },
+    {
+      "symbol": "XEON",
+      "value": 147.915,
+      "date": "2025-12-12"
+    },
+    {
+      "symbol": "VWCE",
+      "value": 143.49,
+      "date": "2025-12-12"
+    },
+    {
+      "symbol": "SWDA",
+      "value": 110.5675,
+      "date": "2025-12-12"
+    }
+  ]
+}
