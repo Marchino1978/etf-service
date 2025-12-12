@@ -93,11 +93,13 @@ router.get("/market-status", async (req, res) => {
     }
   }
 
-  res.json({
+  // Risposta formattata (pretty print)
+  res.setHeader("Content-Type", "application/json");
+  res.send(JSON.stringify({
     datetime: now.toLocaleString("it-IT", { timeZone: "Europe/Rome" }),
     status,
     values
-  });
+  }, null, 2));
 });
 
 export default router;
