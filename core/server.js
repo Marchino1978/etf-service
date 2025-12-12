@@ -72,7 +72,9 @@ app.get("/api/etf", (req, res) => {
       enriched[symbol] = addDailyChange(symbol, allPrices[symbol]);
     }
 
-    res.json(enriched);
+    // 👉 Risposta formattata (pretty print)
+    res.setHeader("Content-Type", "application/json");
+    res.send(JSON.stringify(enriched, null, 2));
   } catch (error) {
     res.status(500).json({ error: "Errore nel recupero ETF" });
   }
@@ -84,7 +86,9 @@ app.get("/api/etf/:symbol", (req, res) => {
   try {
     const price = getPrice(symbol);
     if (price) {
-      res.json(addDailyChange(symbol, price));
+      // 👉 Risposta formattata (pretty print)
+      res.setHeader("Content-Type", "application/json");
+      res.send(JSON.stringify(addDailyChange(symbol, price), null, 2));
     } else {
       res.status(404).json({ error: "ETF non trovato" });
     }
