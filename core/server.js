@@ -52,7 +52,10 @@ app.get("/api/previous-close", (req, res) => {
     }
     const raw = fs.readFileSync(prevPath, "utf8");
     const data = JSON.parse(raw);
-    res.json(data); // 👉 restituisce { timestamp, data: [...] }
+
+    // 👉 Risposta formattata (pretty print)
+    res.setHeader("Content-Type", "application/json");
+    res.send(JSON.stringify(data, null, 2));
   } catch (err) {
     console.error("❌ Errore lettura previousClose.json:", err.message);
     res.status(500).json({ error: "Errore interno" });
