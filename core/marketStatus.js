@@ -54,9 +54,10 @@ router.get("/market-status", async (req, res) => {
         Object.entries(etfs).map(async ([symbol, { fn, label }]) => {
           const result = await fn();
           const prev = getPreviousClose(symbol);
-          let dailyChange = null;
+          let dailyChange = "0.00%"; // default
           if (result?.price && prev) {
-            dailyChange = ((result.price - prev) / prev * 100).toFixed(2);
+            const diff = ((result.price - prev) / prev) * 100;
+            dailyChange = diff.toFixed(2) + "%";
           }
           return { symbol, label, ...result, dailyChange };
         })
@@ -70,13 +71,18 @@ router.get("/market-status", async (req, res) => {
     try {
       const raw = fs.readFileSync("./data/previousClose.json", "utf8");
       const parsed = JSON.parse(raw);
-      const data = Object.entries(parsed).map(([symbol, { price, previousClose, date, label }]) => ({
-        symbol,
-        label,
-        price,
-        previousClose,
-        date
-      }));
+      const data = Object.entries(parsed).map(([symbol, { price, previousClose, date, label }]) => {
+        let dailyChange = "0.00%"; // default
+        if (price && previousClose) {
+          const prev = parseFloat(previousClose);
+          const current = parseFloat(price);
+          if (!isNaN(prev) && !isNaN(current)) {
+            const diff = ((current - prev) / prev) * 100;
+            dailyChange = diff.toFixed(2) + "%";
+          }
+        }
+        return { symbol, label, price, previousClose, date, dailyChange };
+      });
       values = { source: "previous-close", data };
     } catch (err) {
       console.error("Errore lettura previousClose.json:", err);

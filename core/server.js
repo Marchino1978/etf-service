@@ -95,7 +95,8 @@ function addDailyChange(symbol, price) {
   } catch (err) {
     console.error("Errore calcolo dailyChange:", err.message);
   }
-  return { ...price, dailyChange: "" };
+  // 🔴 Forza sempre 0.00% se non calcolabile
+  return { ...price, dailyChange: "0.00%" };
 }
 
 // monta le route
