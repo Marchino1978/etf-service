@@ -22,7 +22,7 @@ router.get("/save-previous-close", async (req, res) => {
     const today = new Date().toISOString().split("T")[0];
     const snapshot = {};
 
-    // 👉 costruzione mappa ETF
+    // costruzione mappa ETF
     for (const key in data) {
       const price = data[key]?.price;
       if (price && !isNaN(parseFloat(price))) {
@@ -37,12 +37,12 @@ router.get("/save-previous-close", async (req, res) => {
     console.log("✅ previousClose.json aggiornato:", filePath);
     console.log("📄 Contenuto aggiornato:", JSON.stringify(snapshot, null, 2));
 
-    // 👉 commit prima del pull per evitare "unstaged changes"
+    // commit + pull + push automatico su GitHub
     exec(`
       cd /opt/render/project/src &&
       git config --global user.email "render-bot@example.com" &&
       git config --global user.name "Render Bot" &&
-      git add ${filePath} &&
+      git add -A &&
       (git diff --cached --quiet || git commit -m "Update previousClose.json [ci skip]") &&
       git pull origin main --rebase &&
       git push https://x-access-token:${process.env.GITHUB_TOKEN}@github.com/Marchino1978/etf-service.git HEAD:main
