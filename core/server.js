@@ -4,12 +4,9 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { getPrice, getAllPrices } from "../core/store.js";
-import { safeParse } from "../core/utils.js";
 import "../core/updater.js";
 
-// 👉 importa la nuova route market-status
 import marketStatusRoute from "../core/marketStatus.js";
-// 👉 importa la nuova route save-previous-close
 import savePreviousCloseRoute from "../routes/savePreviousClose.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -17,23 +14,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// 📄 Caricamento previousClose.json con log chiari
 const prevPath = path.join(__dirname, "../data/previousClose.json");
-let previousClose = { timestamp: null, data: [] };
-
-if (fs.existsSync(prevPath)) {
-  try {
-    const raw = fs.readFileSync(prevPath, "utf8");
-    previousClose = JSON.parse(raw);
-    console.log(
-      `✅ previousClose.json caricato (${previousClose.data?.length || 0} simboli, timestamp ${previousClose.timestamp})`
-    );
-  } catch (err) {
-    console.error("❌ Errore nel parsing di previousClose.json:", err.message);
-  }
-} else {
-  console.info("ℹ️ previousClose.json non trovato all'avvio, verrà generato dall'updater");
-}
 
 // Endpoints di servizio
 app.get("/health", (req, res) => {
@@ -41,23 +22,20 @@ app.get("/health", (req, res) => {
 });
 
 app.get("/ping", (req, res) => {
-  res.status(200).send("pong");
+  res.send("pong");
 });
 
-// 📄 Endpoint per leggere direttamente previousClose.json
-app.get("/api/previous-close", (req, res) => {
+// Endpoint per leggere direttamente previousClose.json
+app.get("/api/previousClose", (req, res) => {
   try {
     if (!fs.existsSync(prevPath)) {
       return res.status(404).json({ error: "previousClose.json non trovato" });
     }
     const raw = fs.readFileSync(prevPath, "utf8");
     const data = JSON.parse(raw);
-
-    // 👉 Risposta formattata (pretty print)
-    res.setHeader("Content-Type", "application/json");
-    res.send(JSON.stringify(data, null, 2));
+    res.json(data);   // <-- niente pretty print
   } catch (err) {
-    console.error("❌ Errore lettura previousClose.json:", err.message);
+    console.error("Errore lettura previousClose.json:", err.message);
     res.status(500).json({ error: "Errore interno" });
   }
 });
@@ -72,9 +50,7 @@ app.get("/api/etf", (req, res) => {
       enriched[symbol] = addDailyChange(symbol, allPrices[symbol]);
     }
 
-    // 👉 Risposta formattata (pretty print)
-    res.setHeader("Content-Type", "application/json");
-    res.send(JSON.stringify(enriched, null, 2));
+    res.json(enriched);   // <-- niente pretty print
   } catch (error) {
     res.status(500).json({ error: "Errore nel recupero ETF" });
   }
@@ -86,9 +62,7 @@ app.get("/api/etf/:symbol", (req, res) => {
   try {
     const price = getPrice(symbol);
     if (price) {
-      // 👉 Risposta formattata (pretty print)
-      res.setHeader("Content-Type", "application/json");
-      res.send(JSON.stringify(addDailyChange(symbol, price), null, 2));
+      res.json(addDailyChange(symbol, price));   // <-- niente pretty print
     } else {
       res.status(404).json({ error: "ETF non trovato" });
     }
@@ -97,29 +71,31 @@ app.get("/api/etf/:symbol", (req, res) => {
   }
 });
 
-// ✅ Calcolo dailyChange usando "value" dal JSON e "price" dall'endpoint
+// Calcolo dailyChange usando "previousClose" dal JSON e "price" dall'endpoint
 function addDailyChange(symbol, price) {
-  let dailyChange = "";
-  if (previousClose.data) {
-    const prevObj = previousClose.data.find((item) => item.symbol === symbol);
-    if (prevObj) {
-      const prev = safeParse(prevObj.value);
-      const current = safeParse(price.price);
+  try {
+    const raw = fs.readFileSync(prevPath, "utf8");
+    const parsed = JSON.parse(raw);
+    const entry = parsed[symbol];
+    if (entry && entry.previousClose && price.price) {
+      const prev = parseFloat(entry.previousClose);
+      const current = parseFloat(price.price);
       if (!isNaN(prev) && !isNaN(current)) {
         const diff = ((current - prev) / prev) * 100;
-        dailyChange = diff.toFixed(2) + "%";
+        return { ...price, dailyChange: diff.toFixed(2) + "%" };
       }
     }
+  } catch (err) {
+    console.error("Errore calcolo dailyChange:", err.message);
   }
-  return { ...price, dailyChange };
+  return { ...price, dailyChange: "" };
 }
 
-// 👉 monta le route
+// monta le route
 app.use("/api", marketStatusRoute);
 app.use("/api", savePreviousCloseRoute);
 
-// Avvio server con porta configurabile
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server avviato su http://localhost:${PORT}`);
+  console.log(`Server avviato su http://localhost:${PORT}`);
 });
