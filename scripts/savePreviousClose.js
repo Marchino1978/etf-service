@@ -52,13 +52,13 @@ async function savePreviousClose() {
     fs.writeFileSync(filePath, JSON.stringify(snapshot, null, 2));
     console.log("✅ previousClose.json aggiornato in formato mappa:", filePath);
 
-    // Configura identità Git locale e fai commit/push
+    // Configura identità Git locale e forza commit/push anche se non ci sono modifiche
     exec(`
       cd ${path.join(__dirname, "..")} &&
       git config user.name "Marchino1978" &&
       git config user.email "marco.brambill@gmail.com" &&
       git add -A &&
-      (git diff --cached --quiet || git commit -m "Update previousClose.json [ci skip]") &&
+      git commit --allow-empty -m "Update previousClose.json [ci skip]" &&
       git pull origin main --rebase &&
       git push
     `, (error, stdout, stderr) => {
@@ -66,7 +66,7 @@ async function savePreviousClose() {
         console.error("❌ Errore push su Git:", error.message);
         console.error(stderr);
       } else {
-        console.log("✅ Push eseguito");
+        console.log("✅ Push eseguito (anche se nessuna modifica)");
         console.log(stdout);
       }
     });
