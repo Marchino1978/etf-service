@@ -5,11 +5,18 @@ import path from "path";
 import axios from "axios";
 import { fileURLToPath } from "url";
 import { exec } from "child_process";
-import { etfs } from "../scrapers/index.js";   // 👉 importa la mappa ETF con i label
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Mappa etichette locale (puoi ampliarla; fallback = simbolo)
+const labels = {
+  VUAA: "S&P 500",
+  VNGA80: "LifeStrategy 80",
+  GOLD: "Physical Gold",
+  SWDA: "Core MSCI World"
+};
 
 const baseUrl = process.env.BASE_URL || "http://localhost:3000";
 const url = `${baseUrl}/api/etf`;
@@ -23,14 +30,14 @@ router.get("/save-previous-close", async (req, res) => {
     const today = new Date().toISOString().split("T")[0];
     const snapshot = {};
 
-    // costruzione mappa ETF con label e prezzo
     for (const key in data) {
       const price = data[key]?.price;
-      if (price && !isNaN(parseFloat(price))) {
+      const p = parseFloat(price);
+      if (!isNaN(p)) {
         snapshot[key] = {
-          label: etfs[key]?.label || key,   // usa il label da index.js
-          price: parseFloat(price),
-          previousClose: parseFloat(price), // riferimento per variazione
+          label: labels[key] || key,
+          price: p,
+          previousClose: p,
           date: today
         };
       }
@@ -38,23 +45,20 @@ router.get("/save-previous-close", async (req, res) => {
 
     fs.writeFileSync(filePath, JSON.stringify(snapshot, null, 2));
     console.log("✅ previousClose.json aggiornato:", filePath);
-    console.log("📄 Contenuto aggiornato:", JSON.stringify(snapshot, null, 2));
 
-    // commit + pull + push automatico su GitHub
+    // Operazioni Git opzionali: commenta se non ti servono in locale
     exec(`
-      cd /opt/render/project/src &&
-      git config --global user.email "render-bot@example.com" &&
-      git config --global user.name "Render Bot" &&
+      cd ${path.join(__dirname, "..")} &&
       git add -A &&
       (git diff --cached --quiet || git commit -m "Update previousClose.json [ci skip]") &&
       git pull origin main --rebase &&
-      git push https://x-access-token:${process.env.GITHUB_TOKEN}@github.com/Marchino1978/etf-service.git HEAD:main
+      git push
     `, (error, stdout, stderr) => {
       if (error) {
-        console.error("❌ Errore push su GitHub:", error.message);
+        console.error("❌ Errore push su Git:", error.message);
         console.error(stderr);
       } else {
-        console.log("✅ previousClose.json pushato su GitHub");
+        console.log("✅ Push eseguito");
         console.log(stdout);
       }
     });
