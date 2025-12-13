@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Stato Mercato</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background-color: #f4f4f4; }
+  </style>
+</head>
+<body>
+  <h1>📊 Stato Mercato</h1>
+  <table id="marketTable">
+    <thead>
+      <tr>
+        <th>Label</th>
+        <th>Price</th>
+        <th>Bid</th>
+        <th>Ask</th>
+        <th>Change</th>
+        <th>Daily Change</th>
+        <th>Previous Close</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function fetchData() {
+      try {
+        const res = await fetch('/api/etf'); // usa il tuo endpoint esistente
+        const data = await res.json();
+
+        const tbody = document.querySelector('#marketTable tbody');
+        tbody.innerHTML = '';
+
+        data.forEach(item => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${item.label}</td>
+            <td>${item.price}</td>
+            <td>${item.bid ?? '-'}</td>
+            <td>${item.ask ?? '-'}</td>
+            <td>${item.change ?? '-'}</td>
+            <td>${item.dailyChange ?? '-'}</td>
+            <td>${item.previousClose ?? '-'}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      } catch (err) {
+        console.error('Errore nel fetch:', err);
+      }
+    }
+
+    // Primo caricamento
+    fetchData();
+    // Aggiorna ogni 60 secondi
+    setInterval(fetchData, 60000);
+  </script>
+</body>
+</html>
