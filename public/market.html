@@ -5,7 +5,8 @@
   <title>📊 Stato Mercato</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
-    h1 { margin-bottom: 20px; }
+    h1 { margin-bottom: 10px; }
+    h2 { margin-bottom: 20px; color: #333; }
     table { border-collapse: collapse; width: 100%; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
     th { background-color: #f4f4f4; }
@@ -14,6 +15,8 @@
 </head>
 <body>
   <h1>📊 Stato Mercato</h1>
+  <h2 id="marketStatus">Stato Mercato: ...</h2>
+
   <table id="marketTable">
     <thead>
       <tr>
@@ -30,15 +33,26 @@
   </table>
 
   <script>
+    async function fetchMarketStatus() {
+      try {
+        const res = await fetch('/api/market-status');
+        const data = await res.json();
+        document.getElementById('marketStatus').textContent =
+          data.open ? "Stato Mercato: APERTO" : "Stato Mercato: CHIUSO";
+      } catch (err) {
+        console.error('Errore nel fetch market-status:', err);
+        document.getElementById('marketStatus').textContent = "Stato Mercato: N/D";
+      }
+    }
+
     async function fetchData() {
       try {
-        const res = await fetch('/api/etf'); // endpoint già esistente
+        const res = await fetch('/api/etf');
         const data = await res.json();
 
         const tbody = document.querySelector('#marketTable tbody');
         tbody.innerHTML = '';
 
-        // data è un oggetto {SYM: {...}, SYM2: {...}}
         Object.entries(data).forEach(([symbol, item]) => {
           const row = document.createElement('tr');
           row.innerHTML = `
@@ -53,13 +67,16 @@
           tbody.appendChild(row);
         });
       } catch (err) {
-        console.error('Errore nel fetch:', err);
+        console.error('Errore nel fetch etf:', err);
       }
     }
 
     // Primo caricamento
+    fetchMarketStatus();
     fetchData();
+
     // Aggiorna ogni 60 secondi
+    setInterval(fetchMarketStatus, 60000);
     setInterval(fetchData, 60000);
   </script>
 </body>

@@ -22,6 +22,6 @@ export const etfs = {
   // X13E:   { fn: getX13E,   label: "EUR Gov Bond" },
   // IUSQ:   { fn: getIUSQ,   label: "MSCI All World" },
   SWDA:   { fn: getSWDA,   label: "Core MSCI World" },
-  XUSE:   { fn: getXUSE,   label: "MSCI Worls Ex-USA" },
-  EXUS:   { fn: getEXUS,   label: "MSCI Worls Ex-USA" }
+  XUSE:   { fn: getXUSE,   label: "MSCI World Ex-USA" },
+  EXUS:   { fn: getEXUS,   label: "MSCI World Ex-USA" }
 };

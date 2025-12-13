@@ -21,8 +21,8 @@ const labels = {
   SWDA: "Core MSCI World",
   VWCE: "FTSE All World"",
   XEON: "XEON",
-  XUSE: "MSCI Worls Ex-USA",
-  EXUS: "MSCI Worls Ex-USA"
+  XUSE: "MSCI World Ex-USA",
+  EXUS: "MSCI World Ex-USA"
 };
 
 // Supabase client

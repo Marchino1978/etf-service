@@ -102,9 +102,13 @@ app.get("/api/etf/:symbol", (req, res) => {
   }
 });
 
-// Calcolo dailyChange usando "previousClose" dal JSON e "price" dall'endpoint
+// Calcolo dailyChange e aggiunta previousClose
 function addDailyChange(symbol, price) {
   try {
+    if (!fs.existsSync(prevPath)) {
+      return { ...price, dailyChange: "0.00%", previousClose: "-" };
+    }
+
     const raw = fs.readFileSync(prevPath, "utf8");
     const parsed = JSON.parse(raw);
     const entry = parsed[symbol];
@@ -118,12 +122,16 @@ function addDailyChange(symbol, price) {
 
     if (prev !== null && !isNaN(prev) && current !== null && !isNaN(current)) {
       const diff = ((current - prev) / prev) * 100;
-      return { ...price, dailyChange: diff.toFixed(2) + "%" };
+      return {
+        ...price,
+        dailyChange: diff.toFixed(2) + "%",
+        previousClose: prev
+      };
     }
   } catch (err) {
     console.error("Errore calcolo dailyChange:", err.message);
   }
-  return { ...price, dailyChange: "0.00%" };
+  return { ...price, dailyChange: "0.00%", previousClose: "-" };
 }
 
 // monta le route
