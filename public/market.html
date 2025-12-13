@@ -23,11 +23,8 @@
         <th>Label</th>
         <th>ISIN</th>
         <th>Price</th>
-        <th>Bid</th>
-        <th>Ask</th>
-        <th>Change</th>
-        <th>Daily Change</th>
         <th>Previous Close</th>
+        <th>Daily Change</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -58,13 +55,14 @@
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${item.label || symbol}</td>
-            <td>${item.ISIN ?? '-'}</td>
-            <td>${item.price ?? '-'}</td>
-            <td>${item.bid ?? '-'}</td>
-            <td>${item.ask ?? '-'}</td>
-            <td>${item.change ?? '-'}</td>
-            <td>${item.dailyChange ?? '-'}</td>
-            <td>${item.previousClose ?? '-'}</td>
+            <td>${
+              item.url
+                ? `<a href="${item.url}" target="_blank">${item.ISIN}</a>`
+                : (item.ISIN ?? '-')
+            }</td>
+            <td>${item.price ? item.price + " €" : '-'}</td>
+            <td>${item.previousClose ? item.previousClose + " €" : '-'}</td>
+            <td>${item.dailyChange ? item.dailyChange + " %" : '-'}</td>
           `;
           tbody.appendChild(row);
         });
