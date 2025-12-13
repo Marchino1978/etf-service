@@ -52,6 +52,7 @@ app.get("/api/etf", (req, res) => {
 
     res.json(enriched);   // <-- niente pretty print
   } catch (error) {
+    console.error("Errore /api/etf:", error.message);
     res.status(500).json({ error: "Errore nel recupero ETF" });
   }
 });
@@ -67,6 +68,7 @@ app.get("/api/etf/:symbol", (req, res) => {
       res.status(404).json({ error: "ETF non trovato" });
     }
   } catch (error) {
+    console.error("Errore /api/etf/:symbol:", error.message);
     res.status(500).json({ error: "Errore nel recupero ETF" });
   }
 });
@@ -77,13 +79,18 @@ function addDailyChange(symbol, price) {
     const raw = fs.readFileSync(prevPath, "utf8");
     const parsed = JSON.parse(raw);
     const entry = parsed[symbol];
-    if (entry && entry.previousClose && price.price) {
-      const prev = parseFloat(entry.previousClose);
-      const current = parseFloat(price.price);
-      if (!isNaN(prev) && !isNaN(current)) {
-        const diff = ((current - prev) / prev) * 100;
-        return { ...price, dailyChange: diff.toFixed(2) + "%" };
-      }
+
+    let prev = entry?.previousClose ? parseFloat(entry.previousClose) : null;
+    let current = price?.price ? parseFloat(price.price) : null;
+
+    // fallback: se non c'è price.price, prova a usare entry.price dal file
+    if ((current === null || isNaN(current)) && entry?.price) {
+      current = parseFloat(entry.price);
+    }
+
+    if (prev !== null && !isNaN(prev) && current !== null && !isNaN(current)) {
+      const diff = ((current - prev) / prev) * 100;
+      return { ...price, dailyChange: diff.toFixed(2) + "%" };
     }
   } catch (err) {
     console.error("Errore calcolo dailyChange:", err.message);
