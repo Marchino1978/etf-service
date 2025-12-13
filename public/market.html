@@ -2,12 +2,14 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>Stato Mercato</title>
+  <title>📊 Stato Mercato</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { margin-bottom: 20px; }
     table { border-collapse: collapse; width: 100%; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
     th { background-color: #f4f4f4; }
+    tr:nth-child(even) { background-color: #fafafa; }
   </style>
 </head>
 <body>
@@ -30,17 +32,18 @@
   <script>
     async function fetchData() {
       try {
-        const res = await fetch('/api/etf'); // usa il tuo endpoint esistente
+        const res = await fetch('/api/etf'); // endpoint già esistente
         const data = await res.json();
 
         const tbody = document.querySelector('#marketTable tbody');
         tbody.innerHTML = '';
 
-        data.forEach(item => {
+        // data è un oggetto {SYM: {...}, SYM2: {...}}
+        Object.entries(data).forEach(([symbol, item]) => {
           const row = document.createElement('tr');
           row.innerHTML = `
-            <td>${item.label}</td>
-            <td>${item.price}</td>
+            <td>${item.label || symbol}</td>
+            <td>${item.price ?? '-'}</td>
             <td>${item.bid ?? '-'}</td>
             <td>${item.ask ?? '-'}</td>
             <td>${item.change ?? '-'}</td>
