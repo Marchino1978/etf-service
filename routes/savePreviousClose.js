@@ -42,6 +42,9 @@ router.get("/save-previous-close", async (req, res) => {
     fs.writeFileSync(filePath, JSON.stringify(payload, null, 2));
     console.log("✅ previousClose.json aggiornato:", filePath);
 
+    // 👉 stampa contenuto per debug
+    console.log("📄 Contenuto aggiornato:", JSON.stringify(payload, null, 2));
+
     // 👉 nuovo step: pull + push automatico su GitHub
     exec(`
       cd /opt/render/project/src &&
@@ -49,7 +52,7 @@ router.get("/save-previous-close", async (req, res) => {
       git config --global user.name "Render Bot" &&
       git pull origin main --rebase &&
       git add ${filePath} &&
-      git commit -m "Update previousClose.json [ci skip]" || echo "⚠️ Nessun cambiamento da committare" &&
+      (git diff --cached --quiet || git commit -m "Update previousClose.json [ci skip]") &&
       git push https://x-access-token:${process.env.GITHUB_TOKEN}@github.com/Marchino1978/etf-service.git HEAD:main
     `, (error, stdout, stderr) => {
       if (error) {
