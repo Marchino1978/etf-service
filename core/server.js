@@ -7,8 +7,8 @@ import "../core/updater.js";
 
 import marketStatusRoute from "../core/marketStatus.js";
 import savePreviousCloseRoute from "../routes/savePreviousClose.js";
-import { createClient } from "@supabase/supabase-js"; // NEW
-import { etfs } from "../core/index.js"; // 🔹 import mappa ETF con ISIN
+import { createClient } from "@supabase/supabase-js";
+import { etfs } from "../core/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,7 +23,7 @@ const supabase =
     ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     : null;
 
-// 🔹 Servi la cartella "public" per la pagina web (market.html)
+// Servi la cartella "public" per la pagina web (market.html)
 app.use(express.static(path.join(__dirname, "../public")));
 
 // Endpoints di servizio
@@ -43,14 +43,13 @@ app.get("/api/previous-close", async (req, res) => {
         .from("previous_close")
         .select("symbol, close_value, snapshot_date")
         .order("snapshot_date", { ascending: false })
-        .limit(10); // ultimi 10 record
+        .limit(10);
 
       if (error) throw error;
       if (data && data.length > 0) {
         return res.json(data);
       }
     }
-
     return res.status(404).json({ error: "Nessun dato disponibile" });
   } catch (err) {
     console.error("Errore lettura previousClose:", err.message);
@@ -58,7 +57,7 @@ app.get("/api/previous-close", async (req, res) => {
   }
 });
 
-// Endpoint ETF: tutti i simboli (pretty print)
+// Endpoint ETF: tutti i simboli
 app.get("/api/etf", async (req, res) => {
   try {
     const allPrices = getAllPrices();
@@ -76,7 +75,7 @@ app.get("/api/etf", async (req, res) => {
   }
 });
 
-// Endpoint ETF: singolo simbolo (pretty print)
+// Endpoint ETF: singolo simbolo
 app.get("/api/etf/:symbol", async (req, res) => {
   const symbol = req.params.symbol.toUpperCase();
   try {
@@ -94,7 +93,7 @@ app.get("/api/etf/:symbol", async (req, res) => {
   }
 });
 
-// Calcolo dailyChange e aggiunta previousClose + ISIN da Supabase
+// Calcolo dailyChange e aggiunta previousClose + ISIN
 async function addDailyChange(symbol, price) {
   try {
     if (supabase) {
@@ -114,7 +113,7 @@ async function addDailyChange(symbol, price) {
         const diff = ((current - prev) / prev) * 100;
         return {
           ...price,
-          dailyChange: diff.toFixed(2) + "%",
+          dailyChange: diff.toFixed(2) + " %",   // spazio + %
           previousClose: prev,
           ISIN: etfs[symbol]?.ISIN || "-",
           url: etfs[symbol]?.url || null
@@ -126,7 +125,7 @@ async function addDailyChange(symbol, price) {
   }
   return {
     ...price,
-    dailyChange: "0.00%",
+    dailyChange: "0.00 %",   // fallback con spazio + %
     previousClose: "-",
     ISIN: etfs[symbol]?.ISIN || "-",
     url: etfs[symbol]?.url || null

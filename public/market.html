@@ -60,9 +60,9 @@
                 ? `<a href="${item.url}" target="_blank">${item.ISIN}</a>`
                 : (item.ISIN ?? '-')
             }</td>
-            <td>${item.price ? item.price + " €" : '-'}</td>
-            <td>${item.previousClose ? item.previousClose + " €" : '-'}</td>
-            <td>${item.dailyChange ? item.dailyChange + " %" : '-'}</td>
+            <td>${item.price != null ? item.price + " €" : '-'}</td>
+            <td>${item.previousClose != null ? item.previousClose + " €" : '-'}</td>
+            <td>${item.dailyChange ?? '-'}</td>
           `;
           tbody.appendChild(row);
         });
@@ -71,11 +71,8 @@
       }
     }
 
-    // Primo caricamento
     fetchMarketStatus();
     fetchData();
-
-    // Aggiorna ogni 60 secondi
     setInterval(fetchMarketStatus, 60000);
     setInterval(fetchData, 60000);
   </script>
