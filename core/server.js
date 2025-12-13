@@ -8,6 +8,7 @@ import "../core/updater.js";
 
 import marketStatusRoute from "../core/marketStatus.js";
 import savePreviousCloseRoute from "../routes/savePreviousClose.js";
+import { createClient } from "@supabase/supabase-js"; // NEW
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,6 +16,14 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 const prevPath = path.join(__dirname, "../data/previousClose.json");
+
+// Supabase client (valori da Environment)
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const supabase =
+  SUPABASE_URL && SUPABASE_ANON_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
 
 // 🔹 Servi la cartella "public" per la pagina web (market.html)
 app.use(express.static(path.join(__dirname, "../public")));
@@ -28,18 +37,32 @@ app.get("/ping", (req, res) => {
   res.send("pong");
 });
 
-// Endpoint per leggere direttamente previousClose.json (pretty print)
-app.get("/api/previous-close", (req, res) => {
+// Endpoint per leggere previousClose (prima da Supabase, fallback su file)
+app.get("/api/previous-close", async (req, res) => {
   try {
+    if (supabase) {
+      const { data, error } = await supabase
+        .from("previous_close")
+        .select("symbol, close_value, snapshot_date")
+        .order("snapshot_date", { ascending: false })
+        .limit(10); // ultimi 10 record
+
+      if (error) throw error;
+      if (data && data.length > 0) {
+        return res.json(data);
+      }
+    }
+
+    // fallback: lettura da file JSON
     if (!fs.existsSync(prevPath)) {
       return res.status(404).json({ error: "previousClose.json non trovato" });
     }
     const raw = fs.readFileSync(prevPath, "utf8");
-    const data = JSON.parse(raw);
+    const parsed = JSON.parse(raw);
     res.setHeader("Content-Type", "application/json");
-    res.send(JSON.stringify(data, null, 2)); // ✅ pretty print
+    res.send(JSON.stringify(parsed, null, 2));
   } catch (err) {
-    console.error("Errore lettura previousClose.json:", err.message);
+    console.error("Errore lettura previousClose:", err.message);
     res.status(500).json({ error: "Errore interno" });
   }
 });
@@ -55,7 +78,7 @@ app.get("/api/etf", (req, res) => {
     }
 
     res.setHeader("Content-Type", "application/json");
-    res.send(JSON.stringify(enriched, null, 2)); // ✅ pretty print
+    res.send(JSON.stringify(enriched, null, 2));
   } catch (error) {
     console.error("Errore /api/etf:", error.message);
     res.status(500).json({ error: "Errore nel recupero ETF" });
@@ -69,7 +92,7 @@ app.get("/api/etf/:symbol", (req, res) => {
     const price = getPrice(symbol);
     if (price) {
       res.setHeader("Content-Type", "application/json");
-      res.send(JSON.stringify(addDailyChange(symbol, price), null, 2)); // ✅ pretty print
+      res.send(JSON.stringify(addDailyChange(symbol, price), null, 2));
     } else {
       res.status(404).json({ error: "ETF non trovato" });
     }
@@ -89,7 +112,6 @@ function addDailyChange(symbol, price) {
     let prev = entry?.previousClose ? parseFloat(entry.previousClose) : null;
     let current = price?.price ? parseFloat(price.price) : null;
 
-    // fallback: se non c'è price.price, prova a usare entry.price dal file
     if ((current === null || isNaN(current)) && entry?.price) {
       current = parseFloat(entry.price);
     }
@@ -101,7 +123,6 @@ function addDailyChange(symbol, price) {
   } catch (err) {
     console.error("Errore calcolo dailyChange:", err.message);
   }
-  // 🔴 Forza sempre 0.00% se non calcolabile
   return { ...price, dailyChange: "0.00%" };
 }
 

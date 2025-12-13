@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import axios from "axios";
 import { fileURLToPath } from "url";
+import { createClient } from "@supabase/supabase-js"; // NEW
 
 // Ricostruisci __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -25,6 +26,14 @@ const labels = {
   EXUS: "EXUS"
 };
 
+// Supabase (valori da Environment in Render)
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const supabase =
+  SUPABASE_URL && SUPABASE_ANON_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
+
 async function savePreviousClose() {
   try {
     // Assicura che la cartella data/ esista
@@ -38,6 +47,7 @@ async function savePreviousClose() {
 
     const today = new Date().toISOString().split("T")[0];
     const snapshot = {};
+    const rows = []; // NEW: per inserimenti su Supabase
 
     // Trasforma i dati in mappa per simbolo
     for (const key in data) {
@@ -50,16 +60,34 @@ async function savePreviousClose() {
           previousClose: p,
           date: today
         };
+
+        // NEW: prepara riga per Supabase
+        rows.push({
+          symbol: key,
+          close_value: p,
+          snapshot_date: today
+        });
       } else {
         console.warn(`⚠️ Nessun valore valido per ${key}, salto`);
       }
     }
 
+    // Scrivi file locale (come prima)
     fs.writeFileSync(filePath, JSON.stringify(snapshot, null, 2));
     console.log("✅ previousClose.json aggiornato in formato mappa:", filePath);
 
+    // NEW: inserisci su Supabase se configurato
+    if (!supabase) {
+      console.warn("⚠️ Supabase non configurato (mancano SUPABASE_URL/ANON_KEY), salto inserimento");
+    } else if (rows.length > 0) {
+      const { error } = await supabase.from("previous_close").insert(rows);
+      if (error) throw error;
+      console.log(`✅ Inseriti ${rows.length} record su Supabase per data ${today}`);
+    } else {
+      console.warn("⚠️ Nessuna riga valida da inserire su Supabase");
+    }
   } catch (err) {
-    console.error("❌ Errore nel salvataggio:", err);
+    console.error("❌ Errore nel salvataggio:", err?.message || err);
   }
 }
 
