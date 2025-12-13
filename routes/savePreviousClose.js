@@ -2,30 +2,18 @@
 import express from "express";
 import fs from "fs";
 import path from "path";
-import axios from "axios";
 import { fileURLToPath } from "url";
+import { getAllPrices } from "../core/store.js";
 import { createClient } from "@supabase/supabase-js";
 
-const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const labels = {
-  VUAA: "S&P 500",
-  VNGA80: "LifeStrategy 80",
-  GOLD: "Physical Gold",
-  SWDA: "Core MSCI World",
-  VWCE: "FTSE All World",
-  XEON: "XEON",
-  XUSE: "MSCI World Ex-USA",
-  EXUS: "MSCI World Ex-USA"
-};
+const router = express.Router();
 
-const baseUrl = process.env.BASE_URL || "http://localhost:3000";
-const url = `${baseUrl}/api/etf`;
-const filePath = path.join(__dirname, "../data/previousClose.json");
+const prevPath = path.join(__dirname, "../data/previousClose.json");
 
-// Supabase client
+// Supabase client (valori da Environment)
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const supabase =
@@ -33,50 +21,42 @@ const supabase =
     ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     : null;
 
+// Endpoint per salvare i valori di chiusura
 router.get("/save-previous-close", async (req, res) => {
   try {
-    const response = await axios.get(url);
-    const data = response.data;
+    const allPrices = getAllPrices();
+    const snapshotDate = new Date().toISOString().split("T")[0];
 
-    const today = new Date().toISOString().split("T")[0];
-    const snapshot = {};
-    const rows = [];
+    // Prepara i dati per Supabase
+    const rows = Object.entries(allPrices).map(([symbol, item]) => ({
+      symbol,
+      close_value: item.price,
+      snapshot_date: snapshotDate,
+    }));
 
-    for (const key in data) {
-      const price = data[key]?.price;
-      const p = parseFloat(price);
-      if (!isNaN(p)) {
-        snapshot[key] = {
-          label: labels[key] || key,
-          price: p,
-          previousClose: p,
-          date: today
-        };
+    // Scrivi anche su file locale (cache per ESP32)
+    fs.writeFileSync(prevPath, JSON.stringify(allPrices, null, 2));
 
-        rows.push({
-          symbol: key,
-          close_value: p,
-          snapshot_date: today
-        });
-      }
-    }
+    // Inserisci/aggiorna su Supabase
+    if (supabase) {
+      const { error } = await supabase
+        .from("previous_close")
+        .upsert(rows, { onConflict: ["symbol", "snapshot_date"] });
 
-    fs.writeFileSync(filePath, JSON.stringify(snapshot, null, 2));
-    console.log("✅ previousClose.json aggiornato:", filePath);
-
-    if (supabase && rows.length > 0) {
-      const { error } = await supabase.from("previous_close").insert(rows);
       if (error) {
-        console.error("❌ Errore inserimento Supabase:", error.message);
-      } else {
-        console.log(`✅ Inseriti ${rows.length} record su Supabase per data ${today}`);
+        console.error("Errore Supabase upsert:", error.message);
+        return res.status(500).json({ error: "Errore Supabase" });
       }
     }
 
-    res.json({ status: "ok", updated: Object.keys(snapshot).length, date: today });
+    res.json({
+      status: "ok",
+      updated: rows.length,
+      date: snapshotDate,
+    });
   } catch (err) {
-    console.error("❌ Errore nel salvataggio:", err.message);
-    res.status(500).json({ status: "error", message: err.message });
+    console.error("Errore save-previous-close:", err.message);
+    res.status(500).json({ error: "Errore interno" });
   }
 });
 
