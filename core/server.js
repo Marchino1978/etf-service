@@ -1,6 +1,5 @@
 // server.js
 import express from "express";
-import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { getPrice, getAllPrices } from "../core/store.js";
@@ -14,8 +13,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-
-const prevPath = path.join(__dirname, "../data/previousClose.json");
 
 // Supabase client (valori da Environment)
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -53,14 +50,7 @@ app.get("/api/previous-close", async (req, res) => {
       }
     }
 
-    // fallback: lettura da file JSON
-    if (!fs.existsSync(prevPath)) {
-      return res.status(404).json({ error: "previousClose.json non trovato" });
-    }
-    const raw = fs.readFileSync(prevPath, "utf8");
-    const parsed = JSON.parse(raw);
-    res.setHeader("Content-Type", "application/json");
-    res.send(JSON.stringify(parsed, null, 2));
+    return res.status(404).json({ error: "Nessun dato disponibile" });
   } catch (err) {
     console.error("Errore lettura previousClose:", err.message);
     res.status(500).json({ error: "Errore interno" });
@@ -68,13 +58,13 @@ app.get("/api/previous-close", async (req, res) => {
 });
 
 // Endpoint ETF: tutti i simboli (pretty print)
-app.get("/api/etf", (req, res) => {
+app.get("/api/etf", async (req, res) => {
   try {
     const allPrices = getAllPrices();
     const enriched = {};
 
     for (const symbol in allPrices) {
-      enriched[symbol] = addDailyChange(symbol, allPrices[symbol]);
+      enriched[symbol] = await addDailyChange(symbol, allPrices[symbol]);
     }
 
     res.setHeader("Content-Type", "application/json");
@@ -86,13 +76,14 @@ app.get("/api/etf", (req, res) => {
 });
 
 // Endpoint ETF: singolo simbolo (pretty print)
-app.get("/api/etf/:symbol", (req, res) => {
+app.get("/api/etf/:symbol", async (req, res) => {
   const symbol = req.params.symbol.toUpperCase();
   try {
     const price = getPrice(symbol);
     if (price) {
+      const enriched = await addDailyChange(symbol, price);
       res.setHeader("Content-Type", "application/json");
-      res.send(JSON.stringify(addDailyChange(symbol, price), null, 2));
+      res.send(JSON.stringify(enriched, null, 2));
     } else {
       res.status(404).json({ error: "ETF non trovato" });
     }
@@ -102,31 +93,26 @@ app.get("/api/etf/:symbol", (req, res) => {
   }
 });
 
-// Calcolo dailyChange e aggiunta previousClose
-function addDailyChange(symbol, price) {
+// Calcolo dailyChange e aggiunta previousClose da Supabase
+async function addDailyChange(symbol, price) {
   try {
-    if (!fs.existsSync(prevPath)) {
-      return { ...price, dailyChange: "0.00%", previousClose: "-" };
-    }
+    if (supabase) {
+      const { data, error } = await supabase
+        .from("previous_close")
+        .select("close_value")
+        .eq("symbol", symbol)
+        .order("snapshot_date", { ascending: false })
+        .limit(1);
 
-    const raw = fs.readFileSync(prevPath, "utf8");
-    const parsed = JSON.parse(raw);
-    const entry = parsed[symbol];
+      if (error) throw error;
 
-    let prev = entry?.previousClose ? parseFloat(entry.previousClose) : null;
-    let current = price?.price ? parseFloat(price.price) : null;
+      const prev = data?.[0]?.close_value ?? null;
+      const current = parseFloat(price?.price ?? "NaN");
 
-    if ((current === null || isNaN(current)) && entry?.price) {
-      current = parseFloat(entry.price);
-    }
-
-    if (prev !== null && !isNaN(prev) && current !== null && !isNaN(current)) {
-      const diff = ((current - prev) / prev) * 100;
-      return {
-        ...price,
-        dailyChange: diff.toFixed(2) + "%",
-        previousClose: prev
-      };
+      if (prev !== null && !isNaN(prev) && !isNaN(current)) {
+        const diff = ((current - prev) / prev) * 100;
+        return { ...price, dailyChange: diff.toFixed(2) + "%", previousClose: prev };
+      }
     }
   } catch (err) {
     console.error("Errore calcolo dailyChange:", err.message);
