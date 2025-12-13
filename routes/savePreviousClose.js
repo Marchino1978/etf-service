@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import axios from "axios";
 import { fileURLToPath } from "url";
-import { exec } from "child_process";   // 👉 per eseguire comandi shell
+import { exec } from "child_process";
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -19,33 +19,25 @@ router.get("/save-previous-close", async (req, res) => {
     const response = await axios.get(url);
     const data = response.data;
 
-    const snapshot = [];
     const today = new Date().toISOString().split("T")[0];
+    const snapshot = {};
 
+    // 👉 costruzione mappa ETF
     for (const key in data) {
       const price = data[key]?.price;
       if (price && !isNaN(parseFloat(price))) {
-        snapshot.push({
-          symbol: key,
-          value: parseFloat(price),
+        snapshot[key] = {
+          price: parseFloat(price),
           date: today
-        });
+        };
       }
     }
 
-    // 👉 aggiungi timestamp globale
-    const payload = {
-      timestamp: new Date().toISOString(),
-      data: snapshot
-    };
-
-    fs.writeFileSync(filePath, JSON.stringify(payload, null, 2));
+    fs.writeFileSync(filePath, JSON.stringify(snapshot, null, 2));
     console.log("✅ previousClose.json aggiornato:", filePath);
+    console.log("📄 Contenuto aggiornato:", JSON.stringify(snapshot, null, 2));
 
-    // 👉 stampa contenuto per debug
-    console.log("📄 Contenuto aggiornato:", JSON.stringify(payload, null, 2));
-
-    // 👉 nuovo step: pull + push automatico su GitHub
+    // 👉 pull + push automatico su GitHub
     exec(`
       cd /opt/render/project/src &&
       git config --global user.email "render-bot@example.com" &&
@@ -64,7 +56,7 @@ router.get("/save-previous-close", async (req, res) => {
       }
     });
 
-    res.json({ status: "ok", updated: snapshot.length, timestamp: payload.timestamp });
+    res.json({ status: "ok", updated: Object.keys(snapshot).length, date: today });
   } catch (err) {
     console.error("❌ Errore nel salvataggio:", err.message);
     res.status(500).json({ status: "error", message: err.message });
