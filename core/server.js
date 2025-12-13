@@ -8,6 +8,7 @@ import "../core/updater.js";
 import marketStatusRoute from "../core/marketStatus.js";
 import savePreviousCloseRoute from "../routes/savePreviousClose.js";
 import { createClient } from "@supabase/supabase-js"; // NEW
+import { etfs } from "../core/index.js"; // 🔹 import mappa ETF con ISIN
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,7 +35,7 @@ app.get("/ping", (req, res) => {
   res.send("pong");
 });
 
-// Endpoint per leggere previousClose (prima da Supabase, fallback su file)
+// Endpoint per leggere previousClose (prima da Supabase)
 app.get("/api/previous-close", async (req, res) => {
   try {
     if (supabase) {
@@ -93,7 +94,7 @@ app.get("/api/etf/:symbol", async (req, res) => {
   }
 });
 
-// Calcolo dailyChange e aggiunta previousClose da Supabase
+// Calcolo dailyChange e aggiunta previousClose + ISIN da Supabase
 async function addDailyChange(symbol, price) {
   try {
     if (supabase) {
@@ -111,20 +112,7 @@ async function addDailyChange(symbol, price) {
 
       if (prev !== null && !isNaN(prev) && !isNaN(current)) {
         const diff = ((current - prev) / prev) * 100;
-        return { ...price, dailyChange: diff.toFixed(2) + "%", previousClose: prev };
-      }
-    }
-  } catch (err) {
-    console.error("Errore calcolo dailyChange:", err.message);
-  }
-  return { ...price, dailyChange: "0.00%", previousClose: "-" };
-}
-
-// monta le route
-app.use("/api", marketStatusRoute);
-app.use("/api", savePreviousCloseRoute);
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server avviato su http://localhost:${PORT}`);
-});
+        return {
+          ...price,
+          dailyChange: diff.toFixed(2) + "%",
+          previousClose: prev,

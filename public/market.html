@@ -21,6 +21,7 @@
     <thead>
       <tr>
         <th>Label</th>
+        <th>ISIN</th>
         <th>Price</th>
         <th>Bid</th>
         <th>Ask</th>
@@ -57,6 +58,7 @@
           const row = document.createElement('tr');
           row.innerHTML = `
             <td>${item.label || symbol}</td>
+            <td>${item.ISIN ?? '-'}</td>
             <td>${item.price ?? '-'}</td>
             <td>${item.bid ?? '-'}</td>
             <td>${item.ask ?? '-'}</td>
