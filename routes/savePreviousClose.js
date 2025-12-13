@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import axios from "axios";
 import { fileURLToPath } from "url";
-import { exec } from "child_process";   // 👉 aggiunto per eseguire comandi shell
+import { exec } from "child_process";   // 👉 per eseguire comandi shell
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -42,18 +42,22 @@ router.get("/save-previous-close", async (req, res) => {
     fs.writeFileSync(filePath, JSON.stringify(payload, null, 2));
     console.log("✅ previousClose.json aggiornato:", filePath);
 
-    // 👉 nuovo step: push automatico su GitHub
+    // 👉 nuovo step: pull + push automatico su GitHub
     exec(`
+      cd /opt/render/project/src &&
       git config --global user.email "render-bot@example.com" &&
       git config --global user.name "Render Bot" &&
+      git pull origin main --rebase &&
       git add ${filePath} &&
-      git commit -m "Update previousClose.json [ci skip]" &&
+      git commit -m "Update previousClose.json [ci skip]" || echo "⚠️ Nessun cambiamento da committare" &&
       git push https://x-access-token:${process.env.GITHUB_TOKEN}@github.com/Marchino1978/etf-service.git HEAD:main
     `, (error, stdout, stderr) => {
       if (error) {
         console.error("❌ Errore push su GitHub:", error.message);
+        console.error(stderr);
       } else {
         console.log("✅ previousClose.json pushato su GitHub");
+        console.log(stdout);
       }
     });
 
