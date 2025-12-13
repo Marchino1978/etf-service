@@ -10,10 +10,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const url = "http://localhost:3000/api/etf"; // endpoint locale
-// Salva sempre nella cartella data/ del progetto
-const filePath = path.join(__dirname, "../data/previousClose.json");
+// Percorso cartella e file
+const dataDir = path.join(__dirname, "../data");
+const filePath = path.join(dataDir, "previousClose.json");
 
-// Mappa etichette locale (puoi ampliarla; fallback = simbolo)
+// Mappa etichette locale (fallback = simbolo)
 const labels = {
   VUAA: "S&P 500",
   VNGA80: "LifeStrategy 80",
@@ -27,6 +28,12 @@ const labels = {
 
 async function savePreviousClose() {
   try {
+    // Assicura che la cartella data/ esista
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+      console.log("📁 Creata cartella data/:", dataDir);
+    }
+
     const res = await axios.get(url);
     const data = res.data;
 
@@ -52,13 +59,13 @@ async function savePreviousClose() {
     fs.writeFileSync(filePath, JSON.stringify(snapshot, null, 2));
     console.log("✅ previousClose.json aggiornato in formato mappa:", filePath);
 
-    // Configura identità Git locale e forza commit/push anche se non ci sono modifiche
+    // Se ti serve il push automatico (mantengo la tua logica attuale)
     exec(`
       cd ${path.join(__dirname, "..")} &&
       git config user.name "Marchino1978" &&
       git config user.email "marco.brambill@gmail.com" &&
       git add -A &&
-      git commit --allow-empty -m "Update previousClose.json [FIX]" &&
+      git commit --allow-empty -m "Update previousClose.json [ci skip]" &&
       git pull origin main --rebase &&
       git push
     `, (error, stdout, stderr) => {
