@@ -37,14 +37,14 @@ router.get("/save-previous-close", async (req, res) => {
     console.log("✅ previousClose.json aggiornato:", filePath);
     console.log("📄 Contenuto aggiornato:", JSON.stringify(snapshot, null, 2));
 
-    // 👉 pull + push automatico su GitHub
+    // 👉 commit prima del pull per evitare "unstaged changes"
     exec(`
       cd /opt/render/project/src &&
       git config --global user.email "render-bot@example.com" &&
       git config --global user.name "Render Bot" &&
-      git pull origin main --rebase &&
       git add ${filePath} &&
       (git diff --cached --quiet || git commit -m "Update previousClose.json [ci skip]") &&
+      git pull origin main --rebase &&
       git push https://x-access-token:${process.env.GITHUB_TOKEN}@github.com/Marchino1978/etf-service.git HEAD:main
     `, (error, stdout, stderr) => {
       if (error) {
