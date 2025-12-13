@@ -15,7 +15,7 @@ const labels = {
   VNGA80: "LifeStrategy 80",
   GOLD: "Physical Gold",
   SWDA: "Core MSCI World",
-  VWCE: "FTSE All World"",
+  VWCE: "FTSE All World",
   XEON: "XEON",
   XUSE: "MSCI Worls Ex-USA",
   EXUS: "MSCI Worls Ex-USA"
