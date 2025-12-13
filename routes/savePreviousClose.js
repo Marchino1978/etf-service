@@ -5,6 +5,7 @@ import path from "path";
 import axios from "axios";
 import { fileURLToPath } from "url";
 import { exec } from "child_process";
+import { etfs } from "../scrapers/index.js";   // 👉 importa la mappa ETF con i label
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -22,12 +23,14 @@ router.get("/save-previous-close", async (req, res) => {
     const today = new Date().toISOString().split("T")[0];
     const snapshot = {};
 
-    // costruzione mappa ETF
+    // costruzione mappa ETF con label e prezzo
     for (const key in data) {
       const price = data[key]?.price;
       if (price && !isNaN(parseFloat(price))) {
         snapshot[key] = {
+          label: etfs[key]?.label || key,   // usa il label da index.js
           price: parseFloat(price),
+          previousClose: parseFloat(price), // riferimento per variazione
           date: today
         };
       }
