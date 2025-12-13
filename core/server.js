@@ -16,6 +16,9 @@ const app = express();
 
 const prevPath = path.join(__dirname, "../data/previousClose.json");
 
+// 🔹 Servi la cartella "public" per la pagina web (market.html)
+app.use(express.static(path.join(__dirname, "../public")));
+
 // Endpoints di servizio
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
@@ -25,7 +28,7 @@ app.get("/ping", (req, res) => {
   res.send("pong");
 });
 
-// Endpoint per leggere direttamente previousClose.json
+// Endpoint per leggere direttamente previousClose.json (pretty print)
 app.get("/api/previous-close", (req, res) => {
   try {
     if (!fs.existsSync(prevPath)) {
@@ -33,14 +36,15 @@ app.get("/api/previous-close", (req, res) => {
     }
     const raw = fs.readFileSync(prevPath, "utf8");
     const data = JSON.parse(raw);
-    res.json(data);   // <-- niente pretty print
+    res.setHeader("Content-Type", "application/json");
+    res.send(JSON.stringify(data, null, 2)); // ✅ pretty print
   } catch (err) {
     console.error("Errore lettura previousClose.json:", err.message);
     res.status(500).json({ error: "Errore interno" });
   }
 });
 
-// Endpoint ETF: tutti i simboli
+// Endpoint ETF: tutti i simboli (pretty print)
 app.get("/api/etf", (req, res) => {
   try {
     const allPrices = getAllPrices();
@@ -50,20 +54,22 @@ app.get("/api/etf", (req, res) => {
       enriched[symbol] = addDailyChange(symbol, allPrices[symbol]);
     }
 
-    res.json(enriched);   // <-- niente pretty print
+    res.setHeader("Content-Type", "application/json");
+    res.send(JSON.stringify(enriched, null, 2)); // ✅ pretty print
   } catch (error) {
     console.error("Errore /api/etf:", error.message);
     res.status(500).json({ error: "Errore nel recupero ETF" });
   }
 });
 
-// Endpoint ETF: singolo simbolo
+// Endpoint ETF: singolo simbolo (pretty print)
 app.get("/api/etf/:symbol", (req, res) => {
   const symbol = req.params.symbol.toUpperCase();
   try {
     const price = getPrice(symbol);
     if (price) {
-      res.json(addDailyChange(symbol, price));   // <-- niente pretty print
+      res.setHeader("Content-Type", "application/json");
+      res.send(JSON.stringify(addDailyChange(symbol, price), null, 2)); // ✅ pretty print
     } else {
       res.status(404).json({ error: "ETF non trovato" });
     }
