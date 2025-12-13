@@ -116,3 +116,28 @@ async function addDailyChange(symbol, price) {
           ...price,
           dailyChange: diff.toFixed(2) + "%",
           previousClose: prev,
+          ISIN: etfs[symbol]?.ISIN || "-",
+          url: etfs[symbol]?.url || null
+        };
+      }
+    }
+  } catch (err) {
+    console.error("Errore calcolo dailyChange:", err.message);
+  }
+  return {
+    ...price,
+    dailyChange: "0.00%",
+    previousClose: "-",
+    ISIN: etfs[symbol]?.ISIN || "-",
+    url: etfs[symbol]?.url || null
+  };
+}
+
+// monta le route
+app.use("/api", marketStatusRoute);
+app.use("/api", savePreviousCloseRoute);
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server avviato su http://localhost:${PORT}`);
+});
