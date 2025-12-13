@@ -15,7 +15,7 @@ import getEXUS from "../scrapers/exus.js";
 export const etfs = {
   VUAA:   { fn: getVUAA,   label: "S&P 500",   ISIN: "IE00BFMXXD54" },
   VNGA80: { fn: getVNGA80, label: "LifeStrategy 80",   ISIN: "IE00BMVB5R75" },
-  GOLD:   { fn: getGOLD,   label: "Physical Gold",   ISIN: "FR0013416716 },
+  GOLD:   { fn: getGOLD,   label: "Physical Gold",   ISIN: "FR0013416716" },
   XEON:   { fn: getXEON,   label: "XEON",   ISIN: "LU0290358497" },
   VWCE:   { fn: getVWCE,   label: "FTSE All World",   ISIN: "IE00BK5BQT80" },
   // ISAC:   { fn: getISAC,   label: "MSCI All World",   ISIN: "IE00B6R52259" },
