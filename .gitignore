@@ -44,5 +44,3 @@ Thumbs.db
 # TXT & CSV files
 *.txt
 *.csv
-
-data/previousClose.json
