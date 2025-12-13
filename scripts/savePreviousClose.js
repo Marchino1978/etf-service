@@ -58,7 +58,7 @@ async function savePreviousClose() {
       git config user.name "Marchino1978" &&
       git config user.email "marco.brambill@gmail.com" &&
       git add -A &&
-      git commit --allow-empty -m "Update previousClose.json [ci skip]" &&
+      git commit --allow-empty -m "Update previousClose.json [FIX" &&
       git pull origin main --rebase &&
       git push
     `, (error, stdout, stderr) => {
@@ -77,4 +77,3 @@ async function savePreviousClose() {
 }
 
 savePreviousClose();
-//
