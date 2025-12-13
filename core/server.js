@@ -26,7 +26,7 @@ app.get("/ping", (req, res) => {
 });
 
 // Endpoint per leggere direttamente previousClose.json
-app.get("/api/previousClose", (req, res) => {
+app.get("/api/previous-close", (req, res) => {
   try {
     if (!fs.existsSync(prevPath)) {
       return res.status(404).json({ error: "previousClose.json non trovato" });
