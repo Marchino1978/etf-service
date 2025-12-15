@@ -11,6 +11,8 @@
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
     th { background-color: #f4f4f4; }
     tr:nth-child(even) { background-color: #fafafa; }
+    .open { color: green; }
+    .closed { color: red; }
   </style>
 </head>
 <body>
@@ -35,11 +37,16 @@
       try {
         const res = await fetch('/api/market-status');
         const data = await res.json();
-        document.getElementById('marketStatus').textContent =
-          data.open ? "Stato Mercato: APERTO" : "Stato Mercato: CHIUSO";
+
+        const isOpen = (data.open === true || data.open === "true");
+        const statusEl = document.getElementById('marketStatus');
+        statusEl.textContent = isOpen ? "Stato Mercato: APERTO" : "Stato Mercato: CHIUSO";
+        statusEl.className = isOpen ? "open" : "closed";
       } catch (err) {
         console.error('Errore nel fetch market-status:', err);
-        document.getElementById('marketStatus').textContent = "Stato Mercato: N/D";
+        const statusEl = document.getElementById('marketStatus');
+        statusEl.textContent = "Stato Mercato: N/D";
+        statusEl.className = "";
       }
     }
 
@@ -71,8 +78,11 @@
       }
     }
 
+    // Primo caricamento
     fetchMarketStatus();
     fetchData();
+
+    // Aggiorna ogni 60 secondi
     setInterval(fetchMarketStatus, 60000);
     setInterval(fetchData, 60000);
   </script>
