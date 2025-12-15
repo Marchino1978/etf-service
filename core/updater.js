@@ -1,6 +1,15 @@
 // core/updater.js
-import { etfs } from "../core/index.js";   // importa la mappa ETF centralizzata
+import { etfs } from "../core/index.js";   // mappa ETF centralizzata
 import { savePrice } from "../core/store.js";
+import { createClient } from "@supabase/supabase-js";
+
+// Supabase client (valori da Environment)
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const supabase =
+  SUPABASE_URL && SUPABASE_ANON_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
 
 async function updateAll() {
   console.log("🔄 Avvio aggiornamento ETF...");
@@ -9,8 +18,30 @@ async function updateAll() {
   for (const [symbol, { fn, label }] of Object.entries(etfs)) {
     try {
       const data = await fn();
+
+      // Salva nello store locale (per uso runtime)
       savePrice(symbol, { ...data, label });
-      results.push({ symbol, status: "ok" });
+
+      // Salva anche su Supabase come snapshot di chiusura
+      if (supabase && data?.price) {
+        const { error } = await supabase
+          .from("previous_close")
+          .insert({
+            symbol,
+            close_value: data.price,
+            snapshot_date: new Date().toISOString(),
+            label
+          });
+
+        if (error) {
+          console.error(`❌ Errore inserimento Supabase per ${symbol}:`, error.message);
+          results.push({ symbol, status: "supabase-error" });
+        } else {
+          results.push({ symbol, status: "ok" });
+        }
+      } else {
+        results.push({ symbol, status: "no-supabase" });
+      }
     } catch (err) {
       if (err.response && err.response.status === 429) {
         console.warn(`⚠️ ${symbol}: rate limit (429), mantengo dati esistenti`);
