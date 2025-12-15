@@ -6,7 +6,7 @@
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
     h1 { margin-bottom: 10px; }
-    h2 { margin-bottom: 20px; color: #333; }
+    h2 { margin-bottom: 20px; }
     table { border-collapse: collapse; width: 100%; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
     th { background-color: #f4f4f4; }
@@ -38,7 +38,9 @@
         const res = await fetch('/api/market-status');
         const data = await res.json();
 
-        const isOpen = (data.open === true || data.open === "true");
+        // Normalizza: accetta true, "true", 1, "1"
+        const isOpen = (data.open === true || data.open === "true" || data.open === 1 || data.open === "1");
+
         const statusEl = document.getElementById('marketStatus');
         statusEl.textContent = isOpen ? "Stato Mercato: APERTO" : "Stato Mercato: CHIUSO";
         statusEl.className = isOpen ? "open" : "closed";
