@@ -1,11 +1,19 @@
 // core/marketStatus.js
 import express from "express";
-import fs from "fs";
 import { etfs } from "./index.js";
 import Holidays from "date-holidays";
+import { createClient } from "@supabase/supabase-js";
 
 const router = express.Router();
 const hd = new Holidays("IT");
+
+// Supabase client (valori da Environment)
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const supabase =
+  SUPABASE_URL && SUPABASE_ANON_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
 
 const MARKET_OPEN = { hour: 7, minute: 30 };
 const MARKET_CLOSE = { hour: 23, minute: 0 };
@@ -31,14 +39,21 @@ function isMarketOpen(now) {
   return true;
 }
 
-function getPreviousClose(symbol) {
+// Recupera previousClose da Supabase
+async function getPreviousClose(symbol) {
+  if (!supabase) return null;
   try {
-    const raw = fs.readFileSync("./data/previousClose.json", "utf8");
-    const parsed = JSON.parse(raw);
-    const entry = parsed[symbol];
-    return entry ? entry.previousClose : null;
+    const { data, error } = await supabase
+      .from("previous_close")
+      .select("close_value")
+      .eq("symbol", symbol)
+      .order("snapshot_date", { ascending: false })
+      .limit(1);
+
+    if (error) throw error;
+    return data?.[0]?.close_value ?? null;
   } catch (err) {
-    console.error("Errore lettura previousClose.json:", err);
+    console.error("Errore lettura Supabase previousClose:", err.message);
     return null;
   }
 }
@@ -54,13 +69,13 @@ router.get("/market-status", async (req, res) => {
       const data = await Promise.all(
         Object.entries(etfs).map(async ([symbol, { fn, label }]) => {
           const result = await fn();
-          const prev = getPreviousClose(symbol);
-          let dailyChange = "0.00 %"; // default con spazio
-          if (result?.price && prev) {
+          const prev = await getPreviousClose(symbol);
+          let dailyChange = "0.00 %"; // default
+          if (result?.price && prev !== null) {
             const diff = ((result.price - prev) / prev) * 100;
             dailyChange = diff.toFixed(2) + " %";
           }
-          return { symbol, label, ...result, dailyChange };
+          return { symbol, label, ...result, previousClose: prev, dailyChange };
         })
       );
       values = { source: "etf", data };
@@ -70,23 +85,25 @@ router.get("/market-status", async (req, res) => {
     }
   } else {
     try {
-      const raw = fs.readFileSync("./data/previousClose.json", "utf8");
-      const parsed = JSON.parse(raw);
-      const data = Object.entries(parsed).map(([symbol, { price, previousClose, date, label }]) => {
-        let dailyChange = "0.00 %"; // default con spazio
-        if (price && previousClose) {
-          const prev = parseFloat(previousClose);
-          const current = parseFloat(price);
-          if (!isNaN(prev) && !isNaN(current)) {
-            const diff = ((current - prev) / prev) * 100;
-            dailyChange = diff.toFixed(2) + " %";
-          }
-        }
-        return { symbol, label, price, previousClose, date, dailyChange };
-      });
-      values = { source: "previous-close", data };
+      // Quando mercato chiuso, leggi solo da Supabase
+      const { data, error } = await supabase
+        .from("previous_close")
+        .select("symbol, close_value, snapshot_date, label");
+
+      if (error) throw error;
+
+      const enriched = data.map(({ symbol, close_value, snapshot_date, label }) => ({
+        symbol,
+        label,
+        price: close_value,
+        previousClose: close_value,
+        date: snapshot_date,
+        dailyChange: "0.00 %"
+      }));
+
+      values = { source: "previous-close", data: enriched };
     } catch (err) {
-      console.error("Errore lettura previousClose.json:", err);
+      console.error("Errore lettura Supabase previousClose:", err.message);
       values = { source: "previous-close", data: [] };
     }
   }
@@ -94,7 +111,7 @@ router.get("/market-status", async (req, res) => {
   res.json({
     datetime: now.toLocaleString("it-IT", { timeZone: "Europe/Rome" }),
     status,
-    open: marketOpen,   // 🔹 aggiunto campo booleano
+    open: marketOpen,
     values
   });
 });
