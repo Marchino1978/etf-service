@@ -3,6 +3,10 @@ import express from "express";
 import { etfs } from "./index.js";
 import Holidays from "date-holidays";
 import { createClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
+
+// Carica variabili d'ambiente dalla root
+dotenv.config({ path: "./.env" });
 
 const router = express.Router();
 const hd = new Holidays("IT");
@@ -10,10 +14,14 @@ const hd = new Holidays("IT");
 // Supabase client
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
-const supabase =
-  SUPABASE_URL && SUPABASE_ANON_KEY
-    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-    : null;
+let supabase = null;
+
+if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  console.info("✅ Supabase inizializzato");
+} else {
+  console.warn("⚠️ Supabase non configurato: controlla il file .env");
+}
 
 const MARKET_OPEN = { hour: 7, minute: 30 };
 const MARKET_CLOSE = { hour: 23, minute: 0 };
@@ -53,7 +61,7 @@ async function getPreviousClose(symbol) {
     if (error) throw error;
     return data?.[0]?.close_value ?? null;
   } catch (err) {
-    console.error("Errore lettura Supabase previousClose:", err.message);
+    console.error("❌ Errore lettura Supabase previousClose:", err.message);
     return null;
   }
 }
@@ -80,31 +88,34 @@ router.get("/market-status", async (req, res) => {
       );
       values = { source: "etf", data };
     } catch (err) {
-      console.error("Errore scraper:", err);
+      console.error("❌ Errore scraper:", err.message);
       values = { source: "etf", data: [] };
     }
   } else {
-    try {
-      // Quando mercato chiuso, leggi solo da Supabase
-      const { data, error } = await supabase
-        .from("previous_close")
-        .select("symbol, close_value, snapshot_date, label");
-
-      if (error) throw error;
-
-      const enriched = data.map(({ symbol, close_value, snapshot_date, label }) => ({
-        symbol,
-        label,
-        price: close_value,
-        previousClose: close_value,
-        date: snapshot_date,
-        dailyChange: "N/A"   // più chiaro che non c’è variazione
-      }));
-
-      values = { source: "previous-close", data: enriched };
-    } catch (err) {
-      console.error("Errore lettura Supabase previousClose:", err.message);
+    if (!supabase) {
       values = { source: "previous-close", data: [] };
+    } else {
+      try {
+        const { data, error } = await supabase
+          .from("previous_close")
+          .select("symbol, close_value, snapshot_date, label");
+
+        if (error) throw error;
+
+        const enriched = data.map(({ symbol, close_value, snapshot_date, label }) => ({
+          symbol,
+          label,
+          price: close_value,
+          previousClose: close_value,
+          date: snapshot_date,
+          dailyChange: "N/A"
+        }));
+
+        values = { source: "previous-close", data: enriched };
+      } catch (err) {
+        console.error("❌ Errore lettura Supabase previousClose:", err.message);
+        values = { source: "previous-close", data: [] };
+      }
     }
   }
 
