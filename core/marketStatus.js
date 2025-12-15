@@ -45,19 +45,20 @@ function getPreviousClose(symbol) {
 
 router.get("/market-status", async (req, res) => {
   const now = new Date();
-  const status = isMarketOpen(now) ? "APERTO" : "CHIUSO";
+  const marketOpen = isMarketOpen(now);
+  const status = marketOpen ? "APERTO" : "CHIUSO";
 
   let values;
-  if (status === "APERTO") {
+  if (marketOpen) {
     try {
       const data = await Promise.all(
         Object.entries(etfs).map(async ([symbol, { fn, label }]) => {
           const result = await fn();
           const prev = getPreviousClose(symbol);
-          let dailyChange = "0.00%"; // default
+          let dailyChange = "0.00 %"; // default con spazio
           if (result?.price && prev) {
             const diff = ((result.price - prev) / prev) * 100;
-            dailyChange = diff.toFixed(2) + "%";
+            dailyChange = diff.toFixed(2) + " %";
           }
           return { symbol, label, ...result, dailyChange };
         })
@@ -72,13 +73,13 @@ router.get("/market-status", async (req, res) => {
       const raw = fs.readFileSync("./data/previousClose.json", "utf8");
       const parsed = JSON.parse(raw);
       const data = Object.entries(parsed).map(([symbol, { price, previousClose, date, label }]) => {
-        let dailyChange = "0.00%"; // default
+        let dailyChange = "0.00 %"; // default con spazio
         if (price && previousClose) {
           const prev = parseFloat(previousClose);
           const current = parseFloat(price);
           if (!isNaN(prev) && !isNaN(current)) {
             const diff = ((current - prev) / prev) * 100;
-            dailyChange = diff.toFixed(2) + "%";
+            dailyChange = diff.toFixed(2) + " %";
           }
         }
         return { symbol, label, price, previousClose, date, dailyChange };
@@ -93,6 +94,7 @@ router.get("/market-status", async (req, res) => {
   res.json({
     datetime: now.toLocaleString("it-IT", { timeZone: "Europe/Rome" }),
     status,
+    open: marketOpen,   // 🔹 aggiunto campo booleano
     values
   });
 });
