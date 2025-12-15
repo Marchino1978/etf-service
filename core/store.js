@@ -1,35 +1,21 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 import { safeParse } from "./utils.js";
+import { createClient } from "@supabase/supabase-js";
 
-// Ricostruisci __dirname in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Supabase client (valori da Environment)
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const supabase =
+  SUPABASE_URL && SUPABASE_ANON_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
 
 const data = {};
-let previousClose = {};
 
-// 📄 Carica i valori di chiusura dal file, se esiste
-const prevPath = path.join(__dirname, "../data/previousClose.json");
-
-if (fs.existsSync(prevPath)) {
-  try {
-    previousClose = JSON.parse(fs.readFileSync(prevPath, "utf8"));
-    console.log(
-      `✅ previousClose.json caricato (${Object.keys(previousClose).length} simboli)`
-    );
-  } catch (err) {
-    console.error("❌ Errore nel parsing di previousClose.json:", err.message);
-  }
-} else {
-  console.info("ℹ️ previousClose.json non trovato all'avvio, verrà generato dall'updater");
-}
-
-export function savePrice(symbol, values) {
+// --- Salvataggio prezzo corrente + calcolo variazioni ---
+export async function savePrice(symbol, values) {
   const now = new Date().toISOString();
 
-  // --- Calcolo CHANGE (variazione rispetto al valore precedente in memoria) ---
+  // CHANGE: variazione rispetto al valore precedente in memoria
   const prev = data[symbol]?.mid ? safeParse(data[symbol].mid) : null;
   const current = safeParse(values.mid);
 
@@ -40,27 +26,41 @@ export function savePrice(symbol, values) {
       const perc = (diff / prev) * 100;
       change = `${diff.toFixed(4)} (${perc.toFixed(2)}%)`;
     } else {
-      // primo valore: inizializza a 0
       change = "0.0000 (0.00%)";
     }
   }
 
-  // --- Calcolo DAILYCHANGE (variazione rispetto alla chiusura salvata) ---
+  // DAILYCHANGE: variazione rispetto alla chiusura salvata su Supabase
   let dailyChange = "";
-  if (previousClose[symbol]) {
-    const prevClose = safeParse(previousClose[symbol].previousClose);
-    if (!isNaN(prevClose) && !isNaN(current)) {
-      const diff = ((current - prevClose) / prevClose) * 100;
-      dailyChange = diff.toFixed(2) + "%";
+  let prevClose = null;
+  if (supabase) {
+    try {
+      const { data: rows, error } = await supabase
+        .from("previous_close")
+        .select("close_value")
+        .eq("symbol", symbol)
+        .order("snapshot_date", { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+      prevClose = rows?.[0]?.close_value ?? null;
+
+      if (prevClose !== null && !isNaN(prevClose) && !isNaN(current)) {
+        const diff = ((current - prevClose) / prevClose) * 100;
+        dailyChange = diff.toFixed(2) + " %"; // spazio + %
+      }
+    } catch (err) {
+      console.error(`❌ Errore lettura Supabase per ${symbol}:`, err.message);
     }
   }
 
-  // --- Salvataggio dati ---
+  // Salvataggio in memoria
   data[symbol] = {
-    ...values,         // contiene mid, ecc.
+    ...values,
     label: values.label || symbol,
     change,
     dailyChange,
+    previousClose: prevClose,
     updatedAt: now
   };
 }
