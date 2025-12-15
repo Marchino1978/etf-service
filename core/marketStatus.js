@@ -7,7 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 const router = express.Router();
 const hd = new Holidays("IT");
 
-// Supabase client (valori da Environment)
+// Supabase client
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const supabase =
@@ -70,7 +70,7 @@ router.get("/market-status", async (req, res) => {
         Object.entries(etfs).map(async ([symbol, { fn, label }]) => {
           const result = await fn();
           const prev = await getPreviousClose(symbol);
-          let dailyChange = "0.00 %"; // default
+          let dailyChange = "N/A";
           if (result?.price && prev !== null) {
             const diff = ((result.price - prev) / prev) * 100;
             dailyChange = diff.toFixed(2) + " %";
@@ -98,7 +98,7 @@ router.get("/market-status", async (req, res) => {
         price: close_value,
         previousClose: close_value,
         date: snapshot_date,
-        dailyChange: "0.00 %"
+        dailyChange: "N/A"   // più chiaro che non c’è variazione
       }));
 
       values = { source: "previous-close", data: enriched };
