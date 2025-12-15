@@ -1,3 +1,4 @@
+// core/updater.js
 import { safeParse } from "./utils.js";
 import { createClient } from "@supabase/supabase-js";
 
@@ -19,19 +20,15 @@ export async function savePrice(symbol, values) {
   const prev = data[symbol]?.mid ? safeParse(data[symbol].mid) : null;
   const current = safeParse(values.mid);
 
-  let change = "";
-  if (!isNaN(current)) {
-    if (prev !== null) {
-      const diff = current - prev;
-      const perc = (diff / prev) * 100;
-      change = `${diff.toFixed(4)} (${perc.toFixed(2)}%)`;
-    } else {
-      change = "0.0000 (0.00%)";
-    }
+  let change = "0.0000 (0.00%)";
+  if (!isNaN(current) && prev !== null) {
+    const diff = current - prev;
+    const perc = (diff / prev) * 100;
+    change = `${diff.toFixed(4)} (${perc.toFixed(2)}%)`;
   }
 
   // DAILYCHANGE: variazione rispetto alla chiusura salvata su Supabase
-  let dailyChange = "";
+  let dailyChange = "0.00 %";
   let prevClose = null;
   if (supabase) {
     try {
@@ -48,6 +45,8 @@ export async function savePrice(symbol, values) {
       if (prevClose !== null && !isNaN(prevClose) && !isNaN(current)) {
         const diff = ((current - prevClose) / prevClose) * 100;
         dailyChange = diff.toFixed(2) + " %"; // spazio + %
+      } else {
+        dailyChange = "N/A"; // più chiaro se manca il dato
       }
     } catch (err) {
       console.error(`❌ Errore lettura Supabase per ${symbol}:`, err.message);

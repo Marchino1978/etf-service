@@ -20,7 +20,7 @@ async function updateAll() {
       const data = await fn();
 
       // Salva nello store locale (per uso runtime)
-      savePrice(symbol, { ...data, label });
+      await savePrice(symbol, { ...data, label });
 
       // Salva anche su Supabase come snapshot di chiusura
       if (supabase && data?.price) {
