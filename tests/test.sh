@@ -16,11 +16,9 @@ SERVER_PID=$!
 # Attendi qualche secondo per permettere al server di avviarsi
 sleep 3
 
-# Test su tutti gli ETF
-for SYMBOL in VUAA VNGA80 GOLD XEON VWCE SWDA XUSE EXUS; do
-  echo "🔎 Test $SYMBOL"
-  curl -s "http://localhost:$PORT/api/etf/$SYMBOL" | jq .
-done
+# Test unico su market-status (integra Supabase)
+echo "🔎 Test endpoint /api/market-status"
+curl -s "http://localhost:$PORT/api/market-status" | jq .
 
 echo "✅ Test completato"
 
