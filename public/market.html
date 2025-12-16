@@ -34,6 +34,9 @@
       color: red;
       font-weight: bold;
     }
+    tbody tr:nth-child(even) {
+      background: #f2f2f2;
+    }
   </style>
 </head>
 <body>
@@ -42,14 +45,11 @@
   <table id="etf-table">
     <thead>
       <tr>
-        <th>Simbolo</th>
-        <th>Nome</th>
-        <th>Prezzo</th>
-        <th>Bid</th>
-        <th>Ask</th>
-        <th>DailyChange</th>
-        <th>PreviousClose</th>
-        <th>Stato</th>
+        <th scope="col">Simbolo</th>
+        <th scope="col">Nome</th>
+        <th scope="col">Prezzo</th>
+        <th scope="col">PreviousClose</th>
+        <th scope="col">DailyChange</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -70,29 +70,18 @@
         const tbody = document.querySelector("#etf-table tbody");
         tbody.innerHTML = "";
 
-        json.values.data.forEach(etf => {
+        const data = json.values?.data ?? [];
+        data.forEach(etf => {
           const row = document.createElement("tr");
           row.innerHTML = `
             <td>${etf.symbol}</td>
             <td>${etf.label}</td>
-            <td>${etf.price ?? "n/a"} €</td>
-            <td>${etf.bid ?? "-"}</td>
-            <td>${etf.ask ?? "-"}</td>
-            <td>${etf.dailyChange}</td>
-            <td>${etf.previousClose ?? "-"}</td>
-            <td>${etf.status ?? json.status}</td>
+            <td>${etf.price ?? "-"} €</td>
+            <td>${etf.previousClose ?? "-"} €</td>
+            <td>${etf.dailyChange ?? "-"} %</td>
           `;
           tbody.appendChild(row);
         });
       } catch (err) {
         document.getElementById("status").innerHTML =
-          "<p style='color:red'>Errore nel caricamento dati: " + err.message + "</p>";
-      }
-    }
-
-    // Carica subito e aggiorna ogni 30 secondi
-    loadMarketStatus();
-    setInterval(loadMarketStatus, 30000);
-  </script>
-</body>
-</html>
+          "<p style='color:red'>
