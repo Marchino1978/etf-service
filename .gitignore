@@ -44,3 +44,8 @@ Thumbs.db
 # TXT & CSV files
 *.txt
 *.csv
+
+# exceptions
+generate_project_txt.sh
+progetto_etf-service.md
+progetto_etf-service.txt
