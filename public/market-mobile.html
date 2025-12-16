@@ -2,29 +2,22 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <title>ETF Service - Market Status</title>
+  <title>ETF Service - Mobile View</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
+      margin: 10px;
       background: #f9f9f9;
     }
     h1 {
+      font-size: 1.2em;
       color: #333;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
       text-align: center;
     }
-    th {
-      background: #eee;
+    .status {
+      text-align: center;
+      margin: 10px 0;
     }
     .open {
       color: green;
@@ -34,26 +27,33 @@
       color: red;
       font-weight: bold;
     }
+    .card {
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin: 8px 0;
+      padding: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .card h2 {
+      margin: 0;
+      font-size: 1em;
+      color: #222;
+    }
+    .card p {
+      margin: 4px 0;
+      font-size: 0.9em;
+    }
+    .price {
+      font-size: 1.1em;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
-  <h1>📊 ETF Market Status</h1>
+  <h1>📊 ETF Market (Mobile)</h1>
   <div id="status"></div>
-  <table id="etf-table">
-    <thead>
-      <tr>
-        <th>Simbolo</th>
-        <th>Nome</th>
-        <th>Prezzo</th>
-        <th>Bid</th>
-        <th>Ask</th>
-        <th>DailyChange</th>
-        <th>PreviousClose</th>
-        <th>Stato</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <div id="etf-list"></div>
 
   <script>
     async function loadMarketStatus() {
@@ -67,22 +67,20 @@
           <p>Mercato: <span class="${json.open ? "open" : "closed"}">${json.status}</span></p>
         `;
 
-        const tbody = document.querySelector("#etf-table tbody");
-        tbody.innerHTML = "";
+        const listDiv = document.getElementById("etf-list");
+        listDiv.innerHTML = "";
 
         json.values.data.forEach(etf => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${etf.symbol}</td>
-            <td>${etf.label}</td>
-            <td>${etf.price ?? "n/a"} €</td>
-            <td>${etf.bid ?? "-"}</td>
-            <td>${etf.ask ?? "-"}</td>
-            <td>${etf.dailyChange}</td>
-            <td>${etf.previousClose ?? "-"}</td>
-            <td>${etf.status ?? json.status}</td>
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `
+            <h2>${etf.label} (${etf.symbol})</h2>
+            <p class="price">${etf.price ?? "n/a"} €</p>
+            <p>DailyChange: ${etf.dailyChange}</p>
+            <p>PrevClose: ${etf.previousClose ?? "-"}</p>
+            <p>Stato: ${etf.status ?? json.status}</p>
           `;
-          tbody.appendChild(row);
+          listDiv.appendChild(card);
         });
       } catch (err) {
         document.getElementById("status").innerHTML =

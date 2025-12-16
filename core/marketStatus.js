@@ -2,26 +2,12 @@
 import express from "express";
 import { etfs } from "./index.js";
 import Holidays from "date-holidays";
-import { createClient } from "@supabase/supabase-js";
-import dotenv from "dotenv";
-
-// Carica variabili d'ambiente dalla root
-dotenv.config({ path: "./.env" });
+import supabase from "./supabaseClient.js";
+import { calcDailyChange } from "./utilsDailyChange.js";
+import { logInfo, logError } from "./logger.js";
 
 const router = express.Router();
 const hd = new Holidays("IT");
-
-// Supabase client
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
-let supabase = null;
-
-if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  console.info("✅ Supabase inizializzato");
-} else {
-  console.warn("⚠️ Supabase non configurato: controlla il file .env");
-}
 
 const MARKET_OPEN = { hour: 7, minute: 30 };
 const MARKET_CLOSE = { hour: 23, minute: 0 };
@@ -61,7 +47,7 @@ async function getPreviousClose(symbol) {
     if (error) throw error;
     return data?.[0]?.close_value ?? null;
   } catch (err) {
-    console.error("❌ Errore lettura Supabase previousClose:", err.message);
+    logError(`Errore lettura Supabase previousClose: ${err.message}`);
     return null;
   }
 }
@@ -78,24 +64,20 @@ router.get("/market-status", async (req, res) => {
         Object.entries(etfs).map(async ([symbol, { fn, label }]) => {
           const result = await fn();
           const prev = await getPreviousClose(symbol);
-          let dailyChange = "N/A";
-          if (result?.price && prev !== null) {
-            const diff = ((result.price - prev) / prev) * 100;
-            dailyChange = diff.toFixed(2) + " %";
-          }
+          const dailyChange = calcDailyChange(result?.price, prev);
           return { symbol, label, ...result, previousClose: prev, dailyChange };
         })
       );
       values = { source: "etf", data };
     } catch (err) {
-      console.error("❌ Errore scraper:", err.message);
+      logError(`Errore scraper: ${err.message}`);
       values = { source: "etf", data: [] };
     }
   } else {
-    if (!supabase) {
-      values = { source: "previous-close", data: [] };
-    } else {
-      try {
+    try {
+      if (!supabase) {
+        values = { source: "previous-close", data: [] };
+      } else {
         const { data, error } = await supabase
           .from("previous_close")
           .select("symbol, close_value, snapshot_date, label");
@@ -112,10 +94,10 @@ router.get("/market-status", async (req, res) => {
         }));
 
         values = { source: "previous-close", data: enriched };
-      } catch (err) {
-        console.error("❌ Errore lettura Supabase previousClose:", err.message);
-        values = { source: "previous-close", data: [] };
       }
+    } catch (err) {
+      logError(`Errore lettura Supabase previousClose: ${err.message}`);
+      values = { source: "previous-close", data: [] };
     }
   }
 

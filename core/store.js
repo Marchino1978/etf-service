@@ -1,55 +1,41 @@
-// core/updater.js
+// core/store.js
 import { safeParse } from "./utils.js";
-import { createClient } from "@supabase/supabase-js";
-
-// Supabase client (valori da Environment)
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
-const supabase =
-  SUPABASE_URL && SUPABASE_ANON_KEY
-    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-    : null;
+import supabase from "./supabaseClient.js";
+import { calcDailyChange } from "./utilsDailyChange.js";
 
 const data = {};
 
-// --- Salvataggio prezzo corrente + calcolo variazioni ---
+// Salvataggio prezzo corrente + calcolo variazioni
 export async function savePrice(symbol, values) {
   const now = new Date().toISOString();
 
   // CHANGE: variazione rispetto al valore precedente in memoria
-  const prev = data[symbol]?.mid ? safeParse(data[symbol].mid) : null;
-  const current = safeParse(values.mid);
-
+  const prevMid = data[symbol]?.mid ? safeParse(data[symbol].mid) : null;
+  const currentMid = safeParse(values.mid);
   let change = "0.0000 (0.00%)";
-  if (!isNaN(current) && prev !== null) {
-    const diff = current - prev;
-    const perc = (diff / prev) * 100;
+  if (!isNaN(currentMid) && prevMid !== null) {
+    const diff = currentMid - prevMid;
+    const perc = (diff / prevMid) * 100;
     change = `${diff.toFixed(4)} (${perc.toFixed(2)}%)`;
   }
 
   // DAILYCHANGE: variazione rispetto alla chiusura salvata su Supabase
-  let dailyChange = "0.00 %";
   let prevClose = null;
+  let dailyChange = "N/A";
   if (supabase) {
     try {
       const { data: rows, error } = await supabase
         .from("previous_close")
-        .select("close_value")
+        .select("close_value, snapshot_date")
         .eq("symbol", symbol)
         .order("snapshot_date", { ascending: false })
         .limit(1);
 
       if (error) throw error;
       prevClose = rows?.[0]?.close_value ?? null;
-
-      if (prevClose !== null && !isNaN(prevClose) && !isNaN(current)) {
-        const diff = ((current - prevClose) / prevClose) * 100;
-        dailyChange = diff.toFixed(2) + " %"; // spazio + %
-      } else {
-        dailyChange = "N/A"; // più chiaro se manca il dato
-      }
+      dailyChange = calcDailyChange(values.price, prevClose);
     } catch (err) {
-      console.error(`❌ Errore lettura Supabase per ${symbol}:`, err.message);
+      console.error(`❌ Errore lettura Supabase per ${symbol}: ${err.message}`);
     }
   }
 

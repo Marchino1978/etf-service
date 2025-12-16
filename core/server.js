@@ -1,4 +1,4 @@
-// server.js
+// core/server.js
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -8,8 +8,9 @@ import "../core/updater.js";
 
 import marketStatusRoute from "../core/marketStatus.js";
 import savePreviousCloseRoute from "../routes/savePreviousClose.js";
-import { createClient } from "@supabase/supabase-js";
+import supabase from "./supabaseClient.js";
 import { etfs } from "../core/index.js";
+import { calcDailyChange } from "./utilsDailyChange.js";
 
 // Carica variabili d'ambiente dalla root
 dotenv.config({ path: "./.env" });
@@ -19,18 +20,6 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Supabase client (valori da Environment)
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
-let supabase = null;
-
-if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  console.info("✅ Supabase inizializzato");
-} else {
-  console.warn("⚠️ Supabase non configurato: controlla il file .env");
-}
-
 // Servi la cartella "public" per la pagina web (market.html)
 app.use(express.static(path.join(__dirname, "../public")));
 
@@ -38,7 +27,7 @@ app.use(express.static(path.join(__dirname, "../public")));
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 app.get("/ping", (req, res) => res.send("pong"));
 
-// Endpoint per leggere previousClose da Supabase
+// Endpoint per leggere previousClose da Supabase (ultimi 10 record globali)
 app.get("/api/previous-close", async (req, res) => {
   try {
     if (!supabase) {
@@ -93,14 +82,19 @@ app.get("/api/etf/:symbol", async (req, res) => {
   }
 });
 
-// Calcolo dailyChange e aggiunta previousClose + ISIN
+// Calcolo dailyChange: variazione rispetto all'ultimo record precedente disponibile
 async function addDailyChange(symbol, price) {
   try {
     if (supabase) {
+      // Data corrente (YYYY-MM-DD) — snapshot_date è di tipo DATE
+      const currentDate = new Date().toISOString().slice(0, 10);
+
+      // Prendi l'ultimo close precedente alla data corrente (esclude lo snapshot di oggi)
       const { data, error } = await supabase
         .from("previous_close")
-        .select("close_value")
+        .select("close_value, snapshot_date")
         .eq("symbol", symbol)
+        .lt("snapshot_date", currentDate) // esclude la data corrente
         .order("snapshot_date", { ascending: false })
         .limit(1);
 
@@ -109,24 +103,25 @@ async function addDailyChange(symbol, price) {
       const prev = data?.[0]?.close_value ?? null;
       const current = parseFloat(price?.price ?? "NaN");
 
-      if (prev !== null && !isNaN(prev) && !isNaN(current)) {
-        const diff = ((current - prev) / prev) * 100;
-        return {
-          ...price,
-          dailyChange: diff.toFixed(2) + " %",
-          previousClose: prev,
-          ISIN: etfs[symbol]?.ISIN || "-",
-          url: etfs[symbol]?.url || null
-        };
-      }
+      const dailyChange = calcDailyChange(current, prev);
+
+      return {
+        ...price,
+        dailyChange,                  // es. "2.35 %" o "— %", in base alla tua implementazione
+        previousClose: prev,
+        previousDate: data?.[0]?.snapshot_date ?? null,
+        ISIN: etfs[symbol]?.ISIN || "-",
+        url: etfs[symbol]?.url || null
+      };
     }
   } catch (err) {
     console.error("❌ Errore calcolo dailyChange:", err.message);
   }
   return {
     ...price,
-    dailyChange: "N/A",   // fallback più chiaro
+    dailyChange: "N/A",
     previousClose: null,
+    previousDate: null,
     ISIN: etfs[symbol]?.ISIN || "-",
     url: etfs[symbol]?.url || null
   };
