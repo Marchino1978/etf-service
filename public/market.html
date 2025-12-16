@@ -40,7 +40,7 @@
   </style>
 </head>
 <body>
-  <h1>📊 ETF Market Status</h1>
+  <h1>ETF Market Status</h1>
   <div id="status"></div>
   <table id="etf-table">
     <thead>
@@ -63,7 +63,7 @@
 
         const statusDiv = document.getElementById("status");
         statusDiv.innerHTML = `
-          <p>🕒 ${json.datetime}</p>
+          <p>${json.datetime}</p>
           <p>Mercato: <span class="${json.open ? "open" : "closed"}">${json.status}</span></p>
         `;
 

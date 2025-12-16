@@ -13,7 +13,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error("❌ Configurazione Supabase mancante. Controlla il file .env nella root.");
+  console.error("Configurazione Supabase mancante. Controlla il file .env nella root.");
   process.exit(1);
 }
 
@@ -31,7 +31,7 @@ async function getPreviousClose(symbol) {
     if (error) throw error;
     return data?.[0]?.close_value ?? null;
   } catch (err) {
-    console.error(`❌ Errore Supabase per ${symbol}:`, err.message);
+    console.error(`Errore Supabase per ${symbol}:`, err.message);
     return null;
   }
 }
@@ -41,7 +41,7 @@ function fmtPct(num) {
 }
 
 async function testQuotes() {
-  console.log("🔎 Test singoli ETF con Supabase...\n");
+  console.log("Test singoli ETF con Supabase...\n");
 
   for (const s of symbols) {
     try {
@@ -49,7 +49,7 @@ async function testQuotes() {
       const data = await res.json();
 
       if (data.error) {
-        console.error(`❌ ${s}: ${data.error}`);
+        console.error(`${s}: ${data.error}`);
         continue;
       }
 
@@ -60,14 +60,14 @@ async function testQuotes() {
           : "N/A";
 
       console.log(
-        `✅ ${s} [${data.status}] → Prezzo: ${data.price ?? "n/a"} | DailyChange: ${variation}`
+        `${s} [${data.status}] → Prezzo: ${data.price ?? "n/a"} | DailyChange: ${variation}`
       );
     } catch (err) {
-      console.error(`❌ Errore nel fetch di ${s}:`, err.message);
+      console.error(`Errore nel fetch di ${s}:`, err.message);
     }
   }
 
-  console.log("\n🔎 Test endpoint completo...\n");
+  console.log("\nTest endpoint completo...\n");
 
   try {
     const allRes = await fetch(baseUrl);
@@ -81,11 +81,11 @@ async function testQuotes() {
           : "N/A";
 
       console.log(
-        `📊 ${symbol} [${data.status}] → Prezzo: ${data.price ?? "n/a"} | DailyChange: ${variation}`
+        `${symbol} [${data.status}] → Prezzo: ${data.price ?? "n/a"} | DailyChange: ${variation}`
       );
     }
   } catch (err) {
-    console.error("❌ Errore nel fetch di tutte le quotes:", err.message);
+    console.error("Errore nel fetch di tutte le quotes:", err.message);
   }
 }
 

@@ -1,7 +1,7 @@
 import readline from 'readline';
 import { DateTime } from 'luxon';
 
-// 🔎 Calcolo Pasqua (algoritmo di Meeus)
+// Calcolo Pasqua (algoritmo di Meeus)
 function easterDate(year) {
   const f = Math.floor;
   const G = year % 19;
@@ -19,7 +19,7 @@ function pasquettaDate(year) {
   return easterDate(year).plus({ days: 1 });
 }
 
-// 🔎 Interfaccia per chiedere l’anno
+// Interfaccia per chiedere l’anno
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
@@ -28,7 +28,7 @@ const rl = readline.createInterface({
 rl.question('Inserisci un anno: ', (answer) => {
   const year = parseInt(answer);
   if (isNaN(year)) {
-    console.log('⚠️ Devi inserire un numero valido.');
+    console.log('Devi inserire un numero valido.');
   } else {
     const easter = easterDate(year);
     const pasquetta = pasquettaDate(year);

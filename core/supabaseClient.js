@@ -11,9 +11,9 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 let supabase = null;
 if (SUPABASE_URL && SUPABASE_ANON_KEY) {
   supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  console.info("✅ Supabase inizializzato");
+  console.info("Supabase inizializzato");
 } else {
-  console.warn("⚠️ Supabase non configurato: controlla il file .env");
+  console.warn("Supabase non configurato: controlla il file .env");
 }
 
 export default supabase;

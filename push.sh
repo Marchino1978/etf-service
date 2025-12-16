@@ -17,5 +17,5 @@ git add --all
 git commit -m "fix" || echo "Nessuna modifica da commitare"
 
 # Push sul branch corrente
-echo "🚀 Push su branch: $CURRENT_BRANCH"
+echo "Push su branch: $CURRENT_BRANCH"
 git push origin "$CURRENT_BRANCH"

@@ -31,22 +31,22 @@ export async function fetchWithRetry(url, selector, retries = 5, delay = 1500) {
   return { $, mid: null };
 }
 
-// ✅ Ora legge solo "value" (formato uniforme)
+// Ora legge solo "value" (formato uniforme)
 function getPreviousClose(symbol) {
   if (!fs.existsSync(CLOSE_FILE)) {
-    console.info("ℹ️ File previousClose.json non trovato:", CLOSE_FILE);
+    console.info("INFO File previousClose.json non trovato:", CLOSE_FILE);
     return null;
   }
   try {
     const closes = JSON.parse(fs.readFileSync(CLOSE_FILE));
     const raw = closes[symbol]?.value ?? null;
     if (raw === null) {
-      console.info(`ℹ️ Nessun valore salvato per ${symbol}`);
+      console.info(`INFO Nessun valore salvato per ${symbol}`);
       return null;
     }
     return safeParse(raw);
   } catch (e) {
-    console.error("❌ Errore lettura JSON:", e.message);
+    console.error("ERROR Errore lettura JSON:", e.message);
     return null;
   }
 }
@@ -63,7 +63,7 @@ function saveClose(symbol, mid) {
       date: now.toISOString().split("T")[0]
     };
     fs.writeFileSync(CLOSE_FILE, JSON.stringify(closes, null, 2));
-    console.log(`💾 Salvato previousClose per ${symbol}: ${mid}`);
+    console.log(`SAVED previousClose per ${symbol}: ${mid}`);
   }
 }
 
@@ -88,7 +88,7 @@ export async function createScraper(symbol, url, itemId) {
       dailyChange = `${diff.toFixed(4)} (${perc.toFixed(2)}%)`;
     }
   } else {
-    console.info(`ℹ️ Nessun dailyChange disponibile per ${symbol} (manca valore precedente)`);
+    console.info(`INFO Nessun dailyChange disponibile per ${symbol} (manca valore precedente)`);
   }
 
   if (mid) saveClose(symbol, mid);

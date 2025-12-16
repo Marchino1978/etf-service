@@ -19,7 +19,7 @@ const labels = {
   VNGA80: "LifeStrategy 80",
   GOLD: "Physical Gold",
   SWDA: "Core MSCI World",
-  VWCE: "FTSE All World"",
+  VWCE: "FTSE All World",
   XEON: "XEON",
   XUSE: "MSCI World Ex-USA",
   EXUS: "MSCI World Ex-USA"
@@ -37,7 +37,7 @@ async function savePreviousClose() {
   try {
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
-      console.log("📁 Creata cartella data/:", dataDir);
+      console.log("Creata cartella data/:", dataDir);
     }
 
     const res = await axios.get(url);
@@ -64,20 +64,20 @@ async function savePreviousClose() {
           snapshot_date: today
         });
       } else {
-        console.warn(`⚠️ Nessun valore valido per ${key}, salto`);
+        console.warn(`Nessun valore valido per ${key}, salto`);
       }
     }
 
     fs.writeFileSync(filePath, JSON.stringify(snapshot, null, 2));
-    console.log("✅ previousClose.json aggiornato:", filePath);
+    console.log("previousClose.json aggiornato:", filePath);
 
     if (supabase && rows.length > 0) {
       const { error } = await supabase.from("previous_close").insert(rows);
       if (error) throw error;
-      console.log(`✅ Inseriti ${rows.length} record su Supabase per data ${today}`);
+      console.log(`Inseriti ${rows.length} record su Supabase per data ${today}`);
     }
   } catch (err) {
-    console.error("❌ Errore nel salvataggio:", err?.message || err);
+    console.error("Errore nel salvataggio:", err?.message || err);
   }
 }
 

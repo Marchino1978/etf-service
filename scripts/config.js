@@ -20,7 +20,7 @@ export const config = {
   updateIntervalMin: 15
 };
 
-// 🔎 Festività italiane fisse (senza anno)
+// Festività italiane fisse (senza anno)
 const fixedHolidaysEU = [
   { month: 1, day: 1 },   // Capodanno
   { month: 5, day: 1 },   // Festa del lavoro
@@ -29,7 +29,7 @@ const fixedHolidaysEU = [
   { month: 12, day: 26 }  // Santo Stefano
 ];
 
-// 🔎 Calcolo Pasqua (algoritmo di Meeus)
+// Calcolo Pasqua (algoritmo di Meeus)
 function easterDate(year) {
   const f = Math.floor;
   const G = year % 19;
@@ -47,7 +47,7 @@ function pasquettaDate(year) {
   return easterDate(year).plus({ days: 1 });
 }
 
-// 🔎 Funzione aggiornata
+// Funzione aggiornata
 export function isMarketOpen(symbol, now = DateTime.now()) {
   const ticker = config.tickers.find(t => t.symbol === symbol);
   if (!ticker) return false;

@@ -45,7 +45,7 @@ app.get("/api/previous-close", async (req, res) => {
     }
     return res.status(404).json({ error: "Nessun dato disponibile" });
   } catch (err) {
-    console.error("❌ Errore lettura previousClose:", err.message);
+    console.error("ERROR lettura previousClose:", err.message);
     res.status(500).json({ error: "Errore interno" });
   }
 });
@@ -60,7 +60,7 @@ app.get("/api/etf", async (req, res) => {
     }
     res.json(enriched);
   } catch (error) {
-    console.error("❌ Errore /api/etf:", error.message);
+    console.error("ERROR /api/etf:", error.message);
     res.status(500).json({ error: "Errore nel recupero ETF" });
   }
 });
@@ -77,7 +77,7 @@ app.get("/api/etf/:symbol", async (req, res) => {
       res.status(404).json({ error: "ETF non trovato" });
     }
   } catch (error) {
-    console.error("❌ Errore /api/etf/:symbol:", error.message);
+    console.error("ERROR /api/etf/:symbol:", error.message);
     res.status(500).json({ error: "Errore nel recupero ETF" });
   }
 });
@@ -86,15 +86,13 @@ app.get("/api/etf/:symbol", async (req, res) => {
 async function addDailyChange(symbol, price) {
   try {
     if (supabase) {
-      // Data corrente (YYYY-MM-DD) — snapshot_date è di tipo DATE
       const currentDate = new Date().toISOString().slice(0, 10);
 
-      // Prendi l'ultimo close precedente alla data corrente (esclude lo snapshot di oggi)
       const { data, error } = await supabase
         .from("previous_close")
         .select("close_value, snapshot_date")
         .eq("symbol", symbol)
-        .lt("snapshot_date", currentDate) // esclude la data corrente
+        .lt("snapshot_date", currentDate)
         .order("snapshot_date", { ascending: false })
         .limit(1);
 
@@ -107,7 +105,7 @@ async function addDailyChange(symbol, price) {
 
       return {
         ...price,
-        dailyChange,                  // es. "2.35 %" o "— %", in base alla tua implementazione
+        dailyChange,
         previousClose: prev,
         previousDate: data?.[0]?.snapshot_date ?? null,
         ISIN: etfs[symbol]?.ISIN || "-",
@@ -115,7 +113,7 @@ async function addDailyChange(symbol, price) {
       };
     }
   } catch (err) {
-    console.error("❌ Errore calcolo dailyChange:", err.message);
+    console.error("ERROR calcolo dailyChange:", err.message);
   }
   return {
     ...price,
@@ -133,5 +131,5 @@ app.use("/api", savePreviousCloseRoute);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server avviato su http://localhost:${PORT}`);
+  console.log(`Server avviato su http://localhost:${PORT}`);
 });
