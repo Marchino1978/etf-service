@@ -84,4 +84,13 @@
         });
       } catch (err) {
         document.getElementById("status").innerHTML =
-          "<p style='color:red'>
+          "<p style='color:red'>Errore nel caricamento dati: " + err.message + "</p>";
+      }
+    }
+
+    // Carica subito e aggiorna ogni 30 secondi
+    loadMarketStatus();
+    setInterval(loadMarketStatus, 30000);
+  </script>
+</body>
+</html>
