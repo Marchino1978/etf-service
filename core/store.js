@@ -1,15 +1,12 @@
 // core/store.js
 import { safeParse } from "./utils.js";
 import supabase from "./supabaseClient.js";
-import { calcDailyChange } from "./utilsDailyChange.js";
 
 const data = {};
 
-// Salvataggio prezzo corrente + calcolo variazioni
 export async function savePrice(symbol, values) {
   const now = new Date().toISOString();
 
-  // CHANGE: variazione rispetto al valore precedente in memoria
   const prevMid = data[symbol]?.mid ? safeParse(data[symbol].mid) : null;
   const currentMid = safeParse(values.mid);
   let change = "0.0000 (0.00%)";
@@ -19,9 +16,7 @@ export async function savePrice(symbol, values) {
     change = `${diff.toFixed(4)} (${perc.toFixed(2)}%)`;
   }
 
-  // DAILYCHANGE: variazione rispetto alla chiusura salvata su Supabase
   let prevClose = null;
-  let dailyChange = "N/A";
   if (supabase) {
     try {
       const { data: rows, error } = await supabase
@@ -33,23 +28,19 @@ export async function savePrice(symbol, values) {
 
       if (error) throw error;
       prevClose = rows?.[0]?.close_value ?? null;
-
-      // 🔎 Usa await e forza sempre a stringa
-      const dc = await calcDailyChange(symbol, values.price);
-      if (dc !== null && dc !== undefined) {
-        dailyChange = String(dc);
-      }
     } catch (err) {
       console.error(`ERROR lettura Supabase per ${symbol}: ${err.message}`);
     }
   }
 
-  // Salvataggio in memoria
+  // 🔎 Usa direttamente dailyChange passato da updater.js
+  const dailyChange = values.dailyChange ?? "N/A";
+
   data[symbol] = {
     ...values,
     label: values.label || symbol,
     change,
-    dailyChange,       // sempre stringa pronta per l'HTML
+    dailyChange,
     previousClose: prevClose,
     updatedAt: now
   };

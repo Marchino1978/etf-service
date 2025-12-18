@@ -7,15 +7,9 @@ import { logInfo, logSuccess, logWarn, logError } from "./logger.js";
 async function upsertSnapshot(symbol, price, label) {
   if (!supabase || typeof price !== "number") return { status: "no-supabase" };
 
-  // Usa solo la data (YYYY-MM-DD) per snapshot_date
   const today = new Date().toISOString().split("T")[0];
 
-  const payload = {
-    symbol,
-    close_value: price,
-    snapshot_date: today,
-    label
-  };
+  const payload = { symbol, close_value: price, snapshot_date: today, label };
 
   const { error } = await supabase
     .from("previous_close")
@@ -27,7 +21,6 @@ async function upsertSnapshot(symbol, price, label) {
   }
   logSuccess(`Snapshot salvato per ${symbol} (${today})`);
 
-  // 🔎 Calcolo variazione rispetto all’ultimo record precedente
   let prevValue = null;
   let dailyChange = null;
 
@@ -36,21 +29,17 @@ async function upsertSnapshot(symbol, price, label) {
       .from("previous_close")
       .select("close_value, snapshot_date")
       .eq("symbol", symbol)
-      .lt("snapshot_date", today) // esclude lo snapshot di oggi
+      .lt("snapshot_date", today)
       .order("snapshot_date", { ascending: false })
       .limit(1);
 
-    if (prevError) {
-      logError(`Errore fetch previous per ${symbol}: ${prevError.message}`);
-    }
+    if (prevError) logError(`Errore fetch previous per ${symbol}: ${prevError.message}`);
 
     if (prevRows && prevRows.length > 0) {
       prevValue = prevRows[0].close_value;
       if (prevValue !== 0) {
         dailyChange = ((price - prevValue) / prevValue) * 100;
-        logSuccess(
-          `DailyChange per ${symbol}: ${dailyChange.toFixed(2)} % (vs ${prevRows[0].snapshot_date})`
-        );
+        logSuccess(`DailyChange per ${symbol}: ${dailyChange.toFixed(2)} %`);
       } else {
         logWarn(`DailyChange non calcolabile per ${symbol}: previousClose = 0`);
       }
@@ -71,11 +60,9 @@ async function updateAll() {
   for (const [symbol, { fn, label }] of Object.entries(etfs)) {
     try {
       const data = await fn();
-
-      // Salva snapshot giornaliero su Supabase + calcolo dailyChange
       const r = await upsertSnapshot(symbol, data?.price, label);
 
-      // 🔎 Forza dailyChange a stringa prima di salvarlo nello store
+      // 🔎 Forza dailyChange a stringa
       let dcString = "N/A";
       if (typeof r.dailyChange === "number") {
         dcString = r.dailyChange.toFixed(2);
@@ -83,7 +70,6 @@ async function updateAll() {
         dcString = r.dailyChange;
       }
 
-      // Salva nello store locale (per uso runtime)
       await savePrice(symbol, { 
         ...data, 
         label, 
@@ -108,14 +94,9 @@ async function updateAll() {
   }
 }
 
-// Popola subito lo store all’avvio
 (async () => {
   logInfo("Inizializzazione updater: verranno generati/aggiornati i dati ETF");
   await updateAll();
 })();
-
-// Avvio automatico: se usi cronjob esterno alle 23:30, puoi disattivare questo setInterval
-// Qui lo lasciamo commentato per evitare duplicazioni
-// setInterval(updateAll, 15 * 60 * 1000);
 
 export default updateAll;
