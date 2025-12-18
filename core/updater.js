@@ -28,6 +28,9 @@ async function upsertSnapshot(symbol, price, label) {
   logSuccess(`Snapshot salvato per ${symbol} (${today})`);
 
   // 🔎 Calcolo variazione rispetto all’ultimo record precedente
+  let prevValue = null;
+  let dailyChange = null;
+
   try {
     const { data: prevRows, error: prevError } = await supabase
       .from("previous_close")
@@ -42,9 +45,9 @@ async function upsertSnapshot(symbol, price, label) {
     }
 
     if (prevRows && prevRows.length > 0) {
-      const prevValue = prevRows[0].close_value;
+      prevValue = prevRows[0].close_value;
       if (prevValue !== 0) {
-        const dailyChange = ((price - prevValue) / prevValue) * 100;
+        dailyChange = ((price - prevValue) / prevValue) * 100;
         logSuccess(
           `DailyChange per ${symbol}: ${dailyChange.toFixed(2)} % (vs ${prevRows[0].snapshot_date})`
         );
@@ -58,7 +61,8 @@ async function upsertSnapshot(symbol, price, label) {
     logError(`Errore calcolo dailyChange per ${symbol}: ${err.message}`);
   }
 
-  return { status: "ok" };
+  // ritorna anche i valori calcolati
+  return { status: "ok", previousClose: prevValue, dailyChange };
 }
 
 async function updateAll() {
@@ -69,12 +73,18 @@ async function updateAll() {
     try {
       const data = await fn();
 
-      // Salva nello store locale (per uso runtime)
-      await savePrice(symbol, { ...data, label });
-
       // Salva snapshot giornaliero su Supabase + calcolo dailyChange
       const r = await upsertSnapshot(symbol, data?.price, label);
-      results.push({ symbol, ...r });
+
+      // Salva nello store locale (per uso runtime) con dailyChange e previousClose
+      await savePrice(symbol, { 
+        ...data, 
+        label, 
+        previousClose: r.previousClose ?? null,
+        dailyChange: r.dailyChange !== null ? Number(r.dailyChange.toFixed(2)) : null
+      });
+
+      results.push({ symbol, status: r.status });
     } catch (err) {
       if (err?.response?.status === 429) {
         logWarn(`${symbol}: rate limit (429), mantengo dati esistenti`);
@@ -89,16 +99,3 @@ async function updateAll() {
   if (process.env.NODE_ENV !== "test") {
     logInfo(`Risultato aggiornamento: ${JSON.stringify(results)}`);
   }
-}
-
-// Popola subito lo store all’avvio
-(async () => {
-  logInfo("Inizializzazione updater: verranno generati/aggiornati i dati ETF");
-  await updateAll();
-})();
-
-// Avvio automatico: se usi cronjob esterno alle 23:30, puoi disattivare questo setInterval
-// Qui lo lasciamo commentato per evitare duplicazioni
-// setInterval(updateAll, 15 * 60 * 1000);
-
-export default updateAll;
