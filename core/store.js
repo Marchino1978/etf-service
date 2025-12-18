@@ -4,11 +4,9 @@ import supabase from "./supabaseClient.js";
 
 const data = {};
 
-// Salvataggio prezzo corrente + calcolo variazioni
 export async function savePrice(symbol, values) {
   const now = new Date().toISOString();
 
-  // CHANGE: variazione rispetto al valore precedente in memoria
   const prevMid = data[symbol]?.mid ? safeParse(data[symbol].mid) : null;
   const currentMid = safeParse(values.mid);
   let change = "0.0000 (0.00%)";
@@ -18,7 +16,6 @@ export async function savePrice(symbol, values) {
     change = `${diff.toFixed(4)} (${perc.toFixed(2)}%)`;
   }
 
-  // PreviousClose: recupero da Supabase
   let prevClose = null;
   if (supabase) {
     try {
@@ -36,15 +33,19 @@ export async function savePrice(symbol, values) {
     }
   }
 
-  // 🔎 HO USATO direttamente dailyChange passato da updater.js
-  const dailyChange = values.dailyChange ?? "N/A";
+  // 🔎 Blindatura: dailyChange sempre stringa
+  let dailyChange = "N/A";
+  if (typeof values.dailyChange === "number") {
+    dailyChange = values.dailyChange.toFixed(2);
+  } else if (typeof values.dailyChange === "string") {
+    dailyChange = values.dailyChange;
+  }
 
-  // Salvataggio in memoria
   data[symbol] = {
     ...values,
     label: values.label || symbol,
     change,
-    dailyChange,       // sempre stringa pronta per l'API
+    dailyChange,
     previousClose: prevClose,
     updatedAt: now
   };
