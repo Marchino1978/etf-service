@@ -33,7 +33,9 @@ export async function savePrice(symbol, values) {
 
       if (error) throw error;
       prevClose = rows?.[0]?.close_value ?? null;
-      dailyChange = calcDailyChange(values.price, prevClose);
+
+      // 🔎 Usa await per ottenere la stringa da calcDailyChange
+      dailyChange = await calcDailyChange(symbol, values.price);
     } catch (err) {
       console.error(`ERROR lettura Supabase per ${symbol}: ${err.message}`);
     }
