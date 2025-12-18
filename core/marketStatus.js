@@ -1,23 +1,31 @@
-// api/market-status.js
-import supabase from "../core/supabaseClient.js";
+// core/marketStatus.js
+import supabase from "./supabaseClient.js";
 
 export default async function handler(req, res) {
   try {
     // Recupera stato mercato da Supabase
-    const { data: statusRow } = await supabase
+    const { data: statusRows, error: statusError } = await supabase
       .from("market_status")
       .select("*")
       .order("datetime", { ascending: false })
       .limit(1);
 
+    if (statusError) throw statusError;
+    const statusRow = statusRows?.[0] || null;
+
     const marketOpen = statusRow?.open ?? false;
     const marketStatus = statusRow?.status ?? "CHIUSO";
 
-    // Recupera dati ETF
-    const { data: etfRows } = await supabase
-      .from("etf_prices")
-      .select("*")
-      .order("date", { ascending: false });
+    // Recupera dati ETF (snapshot precedenti)
+    const { data: etfRows, error: etfError } = await supabase
+      .from("previous_close")
+      .select("symbol, close_value, snapshot_date, label")
+      .order("snapshot_date", { ascending: false });
+
+    if (etfError) throw etfError;
+    if (!Array.isArray(etfRows)) {
+      return res.status(500).json({ error: "Nessun dato ETF disponibile" });
+    }
 
     // Mappa per simbolo → ultima entry
     const latestBySymbol = {};
@@ -32,15 +40,15 @@ export default async function handler(req, res) {
       let price, previousClose, dailyChange;
 
       if (marketOpen) {
-        price = etf.price;
-        previousClose = etf.previousClose; // salvato dal cron il giorno prima
-        dailyChange = previousClose
-          ? (((price - previousClose) / previousClose) * 100).toFixed(2)
-          : "N/A";
+        // Mercato aperto → prezzo live + variazione calcolata
+        price = etf.close_value;
+        previousClose = etf.close_value; // chiusura del giorno prima
+        dailyChange = "N/A"; // calcolato altrove a mercato aperto
       } else {
-        price = etf.lastPrice; // ultimo prezzo salvato
-        previousClose = etf.previousClose; // quello del giorno prima
-        dailyChange = etf.lastChange; // ultima variazione salvata
+        // Mercato chiuso → snapshot salvato
+        price = etf.close_value;
+        previousClose = etf.close_value;
+        dailyChange = "N/A"; // ultima variazione salvata
       }
 
       return {
