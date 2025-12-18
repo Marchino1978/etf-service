@@ -64,7 +64,10 @@ router.get("/market-status", async (req, res) => {
         Object.entries(etfs).map(async ([symbol, { fn, label }]) => {
           const result = await fn();
           const prev = await getPreviousClose(symbol);
-          const dailyChange = calcDailyChange(result?.price, prev);
+
+          // 🔎 CORREZIONE: uso await su calcDailyChange
+          const dailyChange = await calcDailyChange(symbol, result?.price);
+
           return { symbol, label, ...result, previousClose: prev, dailyChange };
         })
       );
