@@ -35,7 +35,8 @@ export async function savePrice(symbol, values) {
       prevClose = rows?.[0]?.close_value ?? null;
 
       // 🔎 Usa await: calcDailyChange restituisce già una stringa (es. "0.23 %")
-      dailyChange = await calcDailyChange(symbol, values.price);
+      const dc = await calcDailyChange(symbol, values.price);
+      dailyChange = typeof dc === "string" ? dc : String(dc);
     } catch (err) {
       console.error(`ERROR lettura Supabase per ${symbol}: ${err.message}`);
     }
