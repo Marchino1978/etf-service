@@ -61,7 +61,6 @@ async function upsertSnapshot(symbol, price, label) {
     logError(`Errore calcolo dailyChange per ${symbol}: ${err.message}`);
   }
 
-  // ritorna anche i valori calcolati
   return { status: "ok", previousClose: prevValue, dailyChange };
 }
 
@@ -81,7 +80,7 @@ async function updateAll() {
         ...data, 
         label, 
         previousClose: r.previousClose ?? null,
-        dailyChange: r.dailyChange !== null ? Number(r.dailyChange.toFixed(2)) : null
+        dailyChange: r.dailyChange !== null ? Number(r.dailyChange.toFixed(2)) : "N/A"
       });
 
       results.push({ symbol, status: r.status });
@@ -99,3 +98,16 @@ async function updateAll() {
   if (process.env.NODE_ENV !== "test") {
     logInfo(`Risultato aggiornamento: ${JSON.stringify(results)}`);
   }
+}
+
+// Popola subito lo store all’avvio
+(async () => {
+  logInfo("Inizializzazione updater: verranno generati/aggiornati i dati ETF");
+  await updateAll();
+})();
+
+// Avvio automatico: se usi cronjob esterno alle 23:30, puoi disattivare questo setInterval
+// Qui lo lasciamo commentato per evitare duplicazioni
+// setInterval(updateAll, 15 * 60 * 1000);
+
+export default updateAll;
