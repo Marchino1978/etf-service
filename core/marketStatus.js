@@ -4,7 +4,7 @@ import { etfs } from "./index.js";
 import Holidays from "date-holidays";
 import supabase from "./supabaseClient.js";
 import { calcDailyChange } from "./utilsDailyChange.js";
-import { logInfo, logError } from "./logger.js";
+import { logError } from "./logger.js";
 
 const router = express.Router();
 const hd = new Holidays("IT");
@@ -65,10 +65,19 @@ router.get("/market-status", async (req, res) => {
           const result = await fn();
           const prev = await getPreviousClose(symbol);
 
-          // 🔎 CORREZIONE: uso await su calcDailyChange
+          // 🔎 dailyChange già stringa con 2 decimali
           const dailyChange = await calcDailyChange(symbol, result?.price);
 
-          return { symbol, label, ...result, previousClose: prev, dailyChange };
+          return {
+            symbol,
+            label,
+            // 🔎 Arrotondamento a 2 decimali SOLO in output
+            price: result?.price ? Number(result.price).toFixed(2) : null,
+            bid: result?.bid ? Number(result.bid).toFixed(2) : null,
+            ask: result?.ask ? Number(result.ask).toFixed(2) : null,
+            previousClose: prev ? Number(prev).toFixed(2) : null,
+            dailyChange
+          };
         })
       );
       values = { source: "etf", data };
@@ -90,8 +99,8 @@ router.get("/market-status", async (req, res) => {
         const enriched = data.map(({ symbol, close_value, snapshot_date, label }) => ({
           symbol,
           label,
-          price: close_value,
-          previousClose: close_value,
+          price: close_value ? Number(close_value).toFixed(2) : null,
+          previousClose: close_value ? Number(close_value).toFixed(2) : null,
           date: snapshot_date,
           dailyChange: "N/A"
         }));
