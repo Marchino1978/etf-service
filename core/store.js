@@ -34,7 +34,7 @@ export async function savePrice(symbol, values) {
       if (error) throw error;
       prevClose = rows?.[0]?.close_value ?? null;
 
-      // 🔎 Usa await per ottenere la stringa da calcDailyChange
+      // 🔎 Usa await: calcDailyChange restituisce già una stringa (es. "0.23 %")
       dailyChange = await calcDailyChange(symbol, values.price);
     } catch (err) {
       console.error(`ERROR lettura Supabase per ${symbol}: ${err.message}`);
@@ -46,7 +46,7 @@ export async function savePrice(symbol, values) {
     ...values,
     label: values.label || symbol,
     change,
-    dailyChange,
+    dailyChange,       // sempre stringa pronta per l'HTML
     previousClose: prevClose,
     updatedAt: now
   };
