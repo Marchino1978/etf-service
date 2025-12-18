@@ -75,12 +75,20 @@ async function updateAll() {
       // Salva snapshot giornaliero su Supabase + calcolo dailyChange
       const r = await upsertSnapshot(symbol, data?.price, label);
 
-      // Salva nello store locale (per uso runtime) con dailyChange e previousClose
+      // 🔎 Forza dailyChange a stringa prima di salvarlo nello store
+      let dcString = "N/A";
+      if (typeof r.dailyChange === "number") {
+        dcString = r.dailyChange.toFixed(2);
+      } else if (typeof r.dailyChange === "string") {
+        dcString = r.dailyChange;
+      }
+
+      // Salva nello store locale (per uso runtime)
       await savePrice(symbol, { 
         ...data, 
         label, 
         previousClose: r.previousClose ?? null,
-        dailyChange: r.dailyChange !== null ? Number(r.dailyChange.toFixed(2)) : "N/A"
+        dailyChange: dcString
       });
 
       results.push({ symbol, status: r.status });
