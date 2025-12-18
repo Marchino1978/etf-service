@@ -5,7 +5,6 @@ import axios from "axios";
 import { fileURLToPath } from "url";
 import { createClient } from "@supabase/supabase-js";
 
-// Ricostruisci __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -13,7 +12,6 @@ const url = "http://localhost:3000/api/etf"; // endpoint locale
 const dataDir = path.join(__dirname, "../data");
 const filePath = path.join(dataDir, "previousClose.json");
 
-// Mappa etichette locale (fallback = simbolo)
 const labels = {
   VUAA: "S&P 500",
   VNGA80: "LifeStrategy 80",
@@ -25,7 +23,6 @@ const labels = {
   EXUS: "MSCI World Ex-USA"
 };
 
-// Supabase client
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const supabase =
@@ -51,16 +48,32 @@ async function savePreviousClose() {
       const price = data[key]?.price;
       const p = parseFloat(price);
       if (!isNaN(p)) {
+        // Recupera il previousClose del giorno prima da Supabase
+        let prevClose = null;
+        if (supabase) {
+          const { data: prevRow } = await supabase
+            .from("previous_close")
+            .select("close_value")
+            .eq("symbol", key)
+            .order("snapshot_date", { ascending: false })
+            .limit(1);
+          prevClose = prevRow?.[0]?.close_value ?? null;
+        }
+
         snapshot[key] = {
           label: labels[key] || key,
           price: p,
-          previousClose: p,
+          previousClose: prevClose, // NON uguale al prezzo corrente
           date: today
         };
 
         rows.push({
           symbol: key,
-          close_value: p,
+          lastPrice: p,           // snapshot del giorno chiuso
+          previousClose: prevClose, // chiusura del giorno prima
+          lastChange: prevClose
+            ? (((p - prevClose) / prevClose) * 100).toFixed(2)
+            : "N/A",
           snapshot_date: today
         });
       } else {
@@ -72,7 +85,7 @@ async function savePreviousClose() {
     console.log("previousClose.json aggiornato:", filePath);
 
     if (supabase && rows.length > 0) {
-      const { error } = await supabase.from("previous_close").insert(rows);
+      const { error } = await supabase.from("etf_prices").insert(rows);
       if (error) throw error;
       console.log(`Inseriti ${rows.length} record su Supabase per data ${today}`);
     }

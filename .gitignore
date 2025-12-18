@@ -46,6 +46,13 @@ Thumbs.db
 *.csv
 
 # exceptions
-generate_project_txt.sh
-progetto_etf-service.md
-progetto_etf-service.txt
+snapshot_all.sh
+root.txt
+core.txt
+data.txt
+public.txt
+routes.txt
+scrapers.txt
+scripts.txt
+tests.txt
+utilities.txt
