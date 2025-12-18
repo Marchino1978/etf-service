@@ -1,5 +1,5 @@
 // api/market-status.js
-import supabase from "../lib/supabase.js";
+import supabase from "../core/supabaseClient.js";
 
 export default async function handler(req, res) {
   try {
