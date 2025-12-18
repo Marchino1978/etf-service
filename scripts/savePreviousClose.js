@@ -48,29 +48,29 @@ async function savePreviousClose() {
       const price = data[key]?.price;
       const p = parseFloat(price);
       if (!isNaN(p)) {
-        // Recupera il previousClose del giorno prima da Supabase
+        // Recupera il previousClose del giorno prima da etf_prices
         let prevClose = null;
         if (supabase) {
           const { data: prevRow } = await supabase
-            .from("previous_close")
-            .select("close_value")
+            .from("etf_prices")
+            .select("lastPrice")
             .eq("symbol", key)
             .order("snapshot_date", { ascending: false })
             .limit(1);
-          prevClose = prevRow?.[0]?.close_value ?? null;
+          prevClose = prevRow?.[0]?.lastPrice ?? null;
         }
 
         snapshot[key] = {
           label: labels[key] || key,
           price: p,
-          previousClose: prevClose, // NON uguale al prezzo corrente
+          previousClose: prevClose,
           date: today
         };
 
         rows.push({
           symbol: key,
-          lastPrice: p,           // snapshot del giorno chiuso
-          previousClose: prevClose, // chiusura del giorno prima
+          lastPrice: p,              // snapshot del giorno chiuso
+          previousClose: prevClose,  // chiusura del giorno prima
           lastChange: prevClose
             ? (((p - prevClose) / prevClose) * 100).toFixed(2)
             : "N/A",

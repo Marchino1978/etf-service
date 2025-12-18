@@ -47,12 +47,12 @@ Thumbs.db
 
 # exceptions
 snapshot_all.sh
-_root.txt
-_core.txt
-_data.txt
-_public.txt
-_routes.txt
-_scrapers.txt
-_scripts.txt
-_tests.txt
-_utilities.txt
+_root.md
+_core.md
+_data.md
+_public.md
+_routes.md
+_scrapers.md
+_scripts.md
+_tests.md
+_utilities.md
