@@ -11,8 +11,8 @@ export async function calcDailyChange(symbol, currentPrice) {
       .from("previous_close")
       .select("close_value, snapshot_date")
       .eq("symbol", symbol)
-      .lt("snapshot_date", today)              // solo date < oggi
-      .not("close_value", "is", null)         // esclude valori null
+      .lt("snapshot_date", today)
+      .not("close_value", "is", null)
       .order("snapshot_date", { ascending: false })
       .limit(1);
 
@@ -23,7 +23,10 @@ export async function calcDailyChange(symbol, currentPrice) {
     if (isNaN(prevClose)) return "N/A";
 
     const variation = ((currentPrice - prevClose) / prevClose) * 100;
-    return `${variation.toFixed(2)} %`;
+
+    // 🔎 Correzione: niente spazio + niente doppio simbolo
+    return variation.toFixed(2); // solo numero
+    // oppure: return `${variation.toFixed(2)}%`;
   } catch (err) {
     console.error(`Errore calcolo dailyChange per ${symbol}: ${err.message}`);
     return "N/A";
