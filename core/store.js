@@ -36,7 +36,7 @@ export async function savePrice(symbol, values) {
     }
   }
 
-  // 🔎 Blindatura: dailyChange sempre stringa
+  // Blindatura: dailyChange sempre stringa
   let dailyChange = "N/A";
   if (typeof values.dailyChange === "number") {
     dailyChange = values.dailyChange.toFixed(2);

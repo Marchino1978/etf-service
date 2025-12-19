@@ -30,8 +30,8 @@ export default async function handler(req, res) {
       snapshotDate: etf.snapshot_date
     }));
 
-    const referenceSymbol = "VUAA.MI";
-    const marketIsOpen = isMarketOpen(referenceSymbol);
+    // Market status basato solo su orari LS-TC (config.js)
+    const marketIsOpen = isMarketOpen();
 
     res.status(200).json({
       datetime: new Date().toISOString(),
