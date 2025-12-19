@@ -7,9 +7,10 @@ export default async function handler(req, res) {
   try {
     const marketIsOpen = isMarketOpen();
 
-    // 🟢 MERCATO APERTO → usa dati LS-TC (store.js)
+    // MERCATO APERTO → usa dati LS-TC (store.js)
     if (marketIsOpen) {
       const live = getAllPrices();
+
       const output = Object.keys(live).map(symbol => {
         const etf = live[symbol];
         return {
@@ -33,8 +34,8 @@ export default async function handler(req, res) {
       });
     }
 
-    // 🟥 MERCATO CHIUSO → usa Supabase per prezzo, store.js per dailyChange
-    const live = getAllPrices(); // contiene dailyChange reale
+    // MERCATO CHIUSO → prezzo da store.js, previousClose da Supabase, dailyChange da store.js
+    const live = getAllPrices(); // contiene dailyChange e ultimo prezzo LS-TC
 
     const { data: etfRows, error: etfError } = await supabase
       .from("previous_close")
@@ -51,13 +52,15 @@ export default async function handler(req, res) {
     }
 
     const output = Object.values(latestBySymbol).map(etf => {
-      const liveData = live[etf.symbol]; // dailyChange reale
+      const liveData = live[etf.symbol];
 
       return {
         symbol: etf.symbol,
         label: etf.label,
-        price: Number(etf.close_value).toFixed(2),
+        // prezzo: se LS-TC ha un valore più recente, usalo
+        price: liveData?.mid ?? liveData?.price ?? Number(etf.close_value).toFixed(2),
         previousClose: Number(etf.close_value).toFixed(2),
+        // dailyChange reale da store.js
         dailyChange: liveData?.dailyChange ?? "0.00",
         snapshotDate: etf.snapshot_date
       };
