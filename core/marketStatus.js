@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   try {
     const marketIsOpen = isMarketOpen();
 
-    // Se il mercato è APERTO → usiamo i dati in memoria (LS-TC)
+    // 🟢 MERCATO APERTO → usa dati LS-TC (store.js)
     if (marketIsOpen) {
       const live = getAllPrices();
       const output = Object.keys(live).map(symbol => {
@@ -33,17 +33,15 @@ export default async function handler(req, res) {
       });
     }
 
-    // Se il mercato è CHIUSO → usiamo Supabase (ultimo cronjob)
+    // 🟥 MERCATO CHIUSO → usa Supabase per prezzo, store.js per dailyChange
+    const live = getAllPrices(); // contiene dailyChange reale
+
     const { data: etfRows, error: etfError } = await supabase
       .from("previous_close")
       .select("symbol, close_value, snapshot_date, label")
       .order("snapshot_date", { ascending: false });
 
     if (etfError) throw etfError;
-
-    if (!Array.isArray(etfRows) || etfRows.length === 0) {
-      return res.status(500).json({ error: "Nessun dato ETF disponibile" });
-    }
 
     const latestBySymbol = {};
     for (const row of etfRows) {
@@ -52,21 +50,25 @@ export default async function handler(req, res) {
       }
     }
 
-    const output = Object.values(latestBySymbol).map(etf => ({
-      symbol: etf.symbol,
-      label: etf.label,
-      price: Number(etf.close_value).toFixed(2),
-      previousClose: Number(etf.close_value).toFixed(2),
-      dailyChange: "0.00", // mercato chiuso → variazione congelata
-      snapshotDate: etf.snapshot_date
-    }));
+    const output = Object.values(latestBySymbol).map(etf => {
+      const liveData = live[etf.symbol]; // dailyChange reale
+
+      return {
+        symbol: etf.symbol,
+        label: etf.label,
+        price: Number(etf.close_value).toFixed(2),
+        previousClose: Number(etf.close_value).toFixed(2),
+        dailyChange: liveData?.dailyChange ?? "0.00",
+        snapshotDate: etf.snapshot_date
+      };
+    });
 
     return res.status(200).json({
       datetime: new Date().toISOString(),
       status: "CHIUSO",
       open: false,
       values: {
-        source: "previous-close",
+        source: "previous-close + store",
         data: output
       }
     });
