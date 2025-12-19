@@ -4,16 +4,13 @@ import fetchEtfData from "./fetchEtfData.js"; // funzione che recupera i dati li
 
 export default async function savePreviousClose() {
   try {
-    // 1. Recupera dati ETF live
     const etfData = await fetchEtfData();
 
     for (const etf of etfData) {
       const { symbol, label, close_value } = etf;
-
-      // 2. Arrotonda prezzo a 2 decimali
       const roundedClose = Number(close_value).toFixed(2);
 
-      // 3. Recupera ultimo record precedente per calcolare variazione
+      // recupera ultimo record precedente
       const { data: prevRows, error: prevError } = await supabase
         .from("previous_close")
         .select("close_value")
@@ -31,7 +28,7 @@ export default async function savePreviousClose() {
         }
       }
 
-      // 4. Inserisci nuovo record in Supabase
+      // inserisci record
       const { error: insertError } = await supabase
         .from("previous_close")
         .insert([
@@ -40,14 +37,18 @@ export default async function savePreviousClose() {
             label,
             close_value: roundedClose,
             snapshot_date: new Date().toISOString(),
-            daily_change: dailyChange,
+            // dailyChange non è una colonna: lo salvi solo in memoria/log
           },
         ]);
 
       if (insertError) throw insertError;
+
+      console.log(
+        `Salvato ${symbol}: prezzo=${roundedClose}, variazione=${dailyChange ?? "N/A"}`
+      );
     }
 
-    console.log("Snapshot salvato correttamente alle 23:30");
+    console.log("Snapshot completato alle 23:30");
   } catch (err) {
     console.error("Errore nel salvataggio snapshot:", err.message);
   }
