@@ -24,28 +24,43 @@ app.use(express.static(path.join(__dirname, "../public")));
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 app.get("/ping", (req, res) => res.send("pong"));
 
+/* -------------------------------------------------------
+   /api/previous-close
+   → restituisce SOLO l’ultimo snapshot per ogni simbolo
+-------------------------------------------------------- */
 app.get("/api/previous-close", async (req, res) => {
   try {
     if (!supabase) {
       return res.status(500).json({ error: "Supabase non configurato" });
     }
+
     const { data, error } = await supabase
       .from("previous_close")
       .select("symbol, close_value, snapshot_date")
-      .order("snapshot_date", { ascending: false })
-      .limit(10);
+      .order("snapshot_date", { ascending: false });
 
     if (error) throw error;
-    if (data && data.length > 0) {
-      return res.json(data);
+    if (!data || data.length === 0) {
+      return res.status(404).json({ error: "Nessun dato disponibile" });
     }
-    return res.status(404).json({ error: "Nessun dato disponibile" });
+
+    const latestBySymbol = {};
+    for (const row of data) {
+      if (!latestBySymbol[row.symbol]) {
+        latestBySymbol[row.symbol] = row;
+      }
+    }
+
+    return res.json(Object.values(latestBySymbol));
   } catch (err) {
     console.error("ERROR lettura previousClose:", err.message);
     res.status(500).json({ error: "Errore interno" });
   }
 });
 
+/* -------------------------------------------------------
+   /api/etf
+-------------------------------------------------------- */
 app.get("/api/etf", async (req, res) => {
   try {
     const allPrices = getAllPrices();
@@ -60,6 +75,9 @@ app.get("/api/etf", async (req, res) => {
   }
 });
 
+/* -------------------------------------------------------
+   /api/etf/:symbol
+-------------------------------------------------------- */
 app.get("/api/etf/:symbol", async (req, res) => {
   const symbol = req.params.symbol.toUpperCase();
   try {
@@ -76,6 +94,13 @@ app.get("/api/etf/:symbol", async (req, res) => {
   }
 });
 
+/* -------------------------------------------------------
+   addDailyChange → arricchisce i dati LS-TC con:
+   - dailyChange
+   - previousClose
+   - previousDate
+   - ISIN
+-------------------------------------------------------- */
 async function addDailyChange(symbol, price) {
   try {
     if (!supabase) {
@@ -135,9 +160,15 @@ async function addDailyChange(symbol, price) {
   }
 }
 
+/* -------------------------------------------------------
+   Routing aggiuntivo
+-------------------------------------------------------- */
 app.use("/api", marketStatusRoute);
 app.use("/api", savePreviousCloseRoute);
 
+/* -------------------------------------------------------
+   Avvio server
+-------------------------------------------------------- */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server avviato su http://localhost:${PORT}`);
