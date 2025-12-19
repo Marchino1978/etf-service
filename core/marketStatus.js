@@ -1,9 +1,39 @@
 // core/marketStatus.js
 import supabase from "./supabaseClient.js";
 import { isMarketOpen } from "../scripts/config.js";
+import { getAllPrices } from "./store.js";
 
 export default async function handler(req, res) {
   try {
+    const marketIsOpen = isMarketOpen();
+
+    // Se il mercato è APERTO → usiamo i dati in memoria (LS-TC)
+    if (marketIsOpen) {
+      const live = getAllPrices();
+      const output = Object.keys(live).map(symbol => {
+        const etf = live[symbol];
+        return {
+          symbol,
+          label: etf.label,
+          price: etf.mid ?? etf.price ?? null,
+          previousClose: etf.previousClose ?? null,
+          dailyChange: etf.dailyChange ?? "0.00",
+          snapshotDate: etf.updatedAt
+        };
+      });
+
+      return res.status(200).json({
+        datetime: new Date().toISOString(),
+        status: "APERTO",
+        open: true,
+        values: {
+          source: "live",
+          data: output
+        }
+      });
+    }
+
+    // Se il mercato è CHIUSO → usiamo Supabase (ultimo cronjob)
     const { data: etfRows, error: etfError } = await supabase
       .from("previous_close")
       .select("symbol, close_value, snapshot_date, label")
@@ -22,26 +52,25 @@ export default async function handler(req, res) {
       }
     }
 
-    const output = Object.values(latestBySymbol).map((etf) => ({
+    const output = Object.values(latestBySymbol).map(etf => ({
       symbol: etf.symbol,
       label: etf.label,
       price: Number(etf.close_value).toFixed(2),
       previousClose: Number(etf.close_value).toFixed(2),
+      dailyChange: "0.00", // mercato chiuso → variazione congelata
       snapshotDate: etf.snapshot_date
     }));
 
-    // Market status basato solo su orari LS-TC (config.js)
-    const marketIsOpen = isMarketOpen();
-
-    res.status(200).json({
+    return res.status(200).json({
       datetime: new Date().toISOString(),
-      status: marketIsOpen ? "APERTO" : "CHIUSO",
-      open: marketIsOpen,
+      status: "CHIUSO",
+      open: false,
       values: {
         source: "previous-close",
         data: output
       }
     });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
