@@ -1,5 +1,5 @@
 // core/updater.js
-import { etfs } from "../core/index.js";   // mappa ETF centralizzata
+import { etfs } from "../core/index.js";
 import { savePrice } from "../core/store.js";
 import supabase from "./supabaseClient.js";
 import { logInfo, logSuccess, logWarn, logError } from "./logger.js";
@@ -62,7 +62,6 @@ async function updateAll() {
       const data = await fn();
       const r = await upsertSnapshot(symbol, data?.price, label);
 
-      // 🔎 Forza dailyChange a stringa
       let dcString = "N/A";
       if (typeof r.dailyChange === "number") {
         dcString = r.dailyChange.toFixed(2);

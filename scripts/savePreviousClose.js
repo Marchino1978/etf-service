@@ -5,27 +5,41 @@ import fetchEtfData from "./fetchEtfData.js";
 export default async function savePreviousClose() {
   try {
     const etfData = await fetchEtfData();
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const today = new Date().toISOString().slice(0, 10);
 
     for (const etf of etfData) {
       const { symbol, label, close_value } = etf;
       const current = Number(close_value);
 
-      // Recupera penultimo valore per calcolare la variazione
+      if (Number.isNaN(current)) {
+        console.error(`Valore non valido per ${symbol}`);
+        continue;
+      }
+
+      const roundedClose = Number(current.toFixed(2));
+
       const { data: prevRows, error: prevError } = await supabase
         .from("previous_close")
-        .select("close_value, snapshot_date")
+        .select("close_value")
         .eq("symbol", symbol)
         .lt("snapshot_date", today)
         .order("snapshot_date", { ascending: false })
         .limit(1);
 
-      if (prevError) throw prevError;
+      if (prevError) {
+        console.error(`Errore lettura previousClose per ${symbol}: ${prevError.message}`);
+        continue;
+      }
 
       let dailyChange = null;
-      const prev = prevRows?.[0]?.close_value;
-      if (typeof prev === "number" && prev !== 0 && !Number.isNaN(current)) {
-        dailyChange = ((current - prev) / prev) * 100; // numero puro
+
+      if (prevRows && prevRows.length > 0) {
+        const prev = Number(prevRows[0].close_value);
+
+        if (!Number.isNaN(prev) && prev !== 0) {
+          dailyChange = ((roundedClose - prev) / prev) * 100;
+          dailyChange = Number(dailyChange.toFixed(2));
+        }
       }
 
       const { error: upsertError } = await supabase
@@ -34,21 +48,25 @@ export default async function savePreviousClose() {
           {
             symbol,
             label,
-            close_value: Number(current.toFixed(2)), // due decimali
-            snapshot_date: today,                    // SOLO date
-            daily_change: dailyChange                // può restare null se primo inserimento
+            close_value: roundedClose,
+            snapshot_date: today,
+            daily_change: dailyChange
           },
           { onConflict: ["symbol", "snapshot_date"] }
         );
 
-      if (upsertError) throw upsertError;
+      if (upsertError) {
+        console.error(`Errore salvataggio previousClose per ${symbol}: ${upsertError.message}`);
+        continue;
+      }
+
       console.log(
-        `Snapshot ${symbol} @ ${today} → close=${current.toFixed(2)}, change=${dailyChange !== null ? dailyChange.toFixed(2) : "N/A"}`
+        `Salvato ${symbol} @ ${today} -> close=${roundedClose}, change=${dailyChange !== null ? dailyChange : "N/A"}`
       );
     }
 
     console.log("Snapshot completato.");
   } catch (err) {
-    console.error("Errore nel salvataggio snapshot:", err.message);
+    console.error("Errore generale savePreviousClose:", err.message);
   }
 }

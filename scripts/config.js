@@ -7,16 +7,13 @@ export const config = {
     { symbol: 'GOLD.MI', isin: 'FR0013416716', name: 'Amundi Physical Gold ETC (C)', market: 'EU' },
     { symbol: 'XEON.MI', isin: 'LU0290358497', name: 'Xtrackers II EUR Overnight Rate Swap UCITS ETF', market: 'EU' },
     { symbol: 'ISAC.MI', isin: 'IE00B6R52259', name: 'iShares MSCI ACWI UCITS ETF (USD) Acc', market: 'EU' },
-    { symbol: 'X13E.MI', isin: 'LU0290356871', name: 'Xtrackers II Eurozone Government Bond 1-3 UCITS ETF', market: 'EU' },
-
-    { symbol: 'SPY', isin: 'US78462F1030', name: 'SPDR S&P 500 ETF Trust', market: 'US' },
-    { symbol: 'QQQ', isin: 'US46090E1038', name: 'Invesco QQQ Trust (Nasdaq 100)', market: 'US' },
-    { symbol: 'AAPL', isin: 'US0378331005', name: 'Apple Inc.', market: 'US' }
+    { symbol: 'X13E.MI', isin: 'LU0290356871', name: 'Xtrackers II Eurozone Government Bond 1-3 UCITS ETF', market: 'EU' }
   ],
+
   marketHours: {
-    EU: { timezone: 'Europe/Rome', open: '09:00', close: '17:30' },
-    US: { timezone: 'America/New_York', open: '09:30', close: '16:00' } // orari NYSE/Nasdaq
+    EU: { timezone: 'Europe/Rome', open: '09:00', close: '17:30' }
   },
+
   updateIntervalMin: 15
 };
 
@@ -47,7 +44,6 @@ function pasquettaDate(year) {
   return easterDate(year).plus({ days: 1 });
 }
 
-// Funzione aggiornata
 export function isMarketOpen(symbol, now = DateTime.now()) {
   const ticker = config.tickers.find(t => t.symbol === symbol);
   if (!ticker) return false;

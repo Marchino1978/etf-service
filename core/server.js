@@ -12,7 +12,6 @@ import supabase from "./supabaseClient.js";
 import { etfs } from "../core/index.js";
 import { calcDailyChange } from "./utilsDailyChange.js";
 
-// Carica variabili d'ambiente dalla root
 dotenv.config({ path: "./.env" });
 
 const __filename = fileURLToPath(import.meta.url);
@@ -20,14 +19,11 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Servi la cartella "public" per la pagina web (market.html)
 app.use(express.static(path.join(__dirname, "../public")));
 
-// Endpoints di servizio
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 app.get("/ping", (req, res) => res.send("pong"));
 
-// Endpoint per leggere previousClose da Supabase (ultimi 10 record globali)
 app.get("/api/previous-close", async (req, res) => {
   try {
     if (!supabase) {
@@ -50,7 +46,6 @@ app.get("/api/previous-close", async (req, res) => {
   }
 });
 
-// Endpoint ETF: tutti i simboli
 app.get("/api/etf", async (req, res) => {
   try {
     const allPrices = getAllPrices();
@@ -65,7 +60,6 @@ app.get("/api/etf", async (req, res) => {
   }
 });
 
-// Endpoint ETF: singolo simbolo
 app.get("/api/etf/:symbol", async (req, res) => {
   const symbol = req.params.symbol.toUpperCase();
   try {
@@ -82,50 +76,69 @@ app.get("/api/etf/:symbol", async (req, res) => {
   }
 });
 
-// Calcolo dailyChange: variazione rispetto all'ultimo record precedente disponibile
 async function addDailyChange(symbol, price) {
   try {
-    if (supabase) {
-      const currentDate = new Date().toISOString().slice(0, 10);
-
-      const { data, error } = await supabase
-        .from("previous_close")
-        .select("close_value, snapshot_date")
-        .eq("symbol", symbol)
-        .lt("snapshot_date", currentDate)
-        .order("snapshot_date", { ascending: false })
-        .limit(1);
-
-      if (error) throw error;
-
-      const prev = data?.[0]?.close_value ?? null;
-      const current = parseFloat(price?.price ?? "NaN");
-
-      const dailyChange = calcDailyChange(current, prev);
-
+    if (!supabase) {
       return {
         ...price,
-        dailyChange,
-        previousClose: prev,
-        previousDate: data?.[0]?.snapshot_date ?? null,
+        dailyChange: "N/A",
+        previousClose: null,
+        previousDate: null,
         ISIN: etfs[symbol]?.ISIN || "-",
         url: etfs[symbol]?.url || null
       };
     }
+
+    const current = parseFloat(price?.price ?? "NaN");
+    if (Number.isNaN(current)) {
+      return {
+        ...price,
+        dailyChange: "N/A",
+        previousClose: null,
+        previousDate: null,
+        ISIN: etfs[symbol]?.ISIN || "-",
+        url: etfs[symbol]?.url || null
+      };
+    }
+
+    const dailyChange = await calcDailyChange(symbol, current);
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    const { data, error } = await supabase
+      .from("previous_close")
+      .select("close_value, snapshot_date")
+      .eq("symbol", symbol)
+      .lt("snapshot_date", today)
+      .not("close_value", "is", null)
+      .order("snapshot_date", { ascending: false })
+      .limit(1);
+
+    if (error) throw error;
+
+    const prev = data?.[0]?.close_value ?? null;
+
+    return {
+      ...price,
+      dailyChange: dailyChange === "N/A" ? "N/A" : Number(dailyChange).toFixed(2),
+      previousClose: prev,
+      previousDate: data?.[0]?.snapshot_date ?? null,
+      ISIN: etfs[symbol]?.ISIN || "-",
+      url: etfs[symbol]?.url || null
+    };
   } catch (err) {
     console.error("ERROR calcolo dailyChange:", err.message);
+    return {
+      ...price,
+      dailyChange: "N/A",
+      previousClose: null,
+      previousDate: null,
+      ISIN: etfs[symbol]?.ISIN || "-",
+      url: etfs[symbol]?.url || null
+    };
   }
-  return {
-    ...price,
-    dailyChange: "N/A",
-    previousClose: null,
-    previousDate: null,
-    ISIN: etfs[symbol]?.ISIN || "-",
-    url: etfs[symbol]?.url || null
-  };
 }
 
-// monta le route
 app.use("/api", marketStatusRoute);
 app.use("/api", savePreviousCloseRoute);
 
