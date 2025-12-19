@@ -84,8 +84,7 @@ async function addDailyChange(symbol, price) {
         dailyChange: "N/A",
         previousClose: null,
         previousDate: null,
-        ISIN: etfs[symbol]?.ISIN || "-",
-        url: etfs[symbol]?.url || null
+        ISIN: etfs[symbol]?.ISIN || "-"
       };
     }
 
@@ -96,8 +95,7 @@ async function addDailyChange(symbol, price) {
         dailyChange: "N/A",
         previousClose: null,
         previousDate: null,
-        ISIN: etfs[symbol]?.ISIN || "-",
-        url: etfs[symbol]?.url || null
+        ISIN: etfs[symbol]?.ISIN || "-"
       };
     }
 
@@ -123,8 +121,7 @@ async function addDailyChange(symbol, price) {
       dailyChange: dailyChange === "N/A" ? "N/A" : Number(dailyChange).toFixed(2),
       previousClose: prev,
       previousDate: data?.[0]?.snapshot_date ?? null,
-      ISIN: etfs[symbol]?.ISIN || "-",
-      url: etfs[symbol]?.url || null
+      ISIN: etfs[symbol]?.ISIN || "-"
     };
   } catch (err) {
     console.error("ERROR calcolo dailyChange:", err.message);
@@ -133,8 +130,7 @@ async function addDailyChange(symbol, price) {
       dailyChange: "N/A",
       previousClose: null,
       previousDate: null,
-      ISIN: etfs[symbol]?.ISIN || "-",
-      url: etfs[symbol]?.url || null
+      ISIN: etfs[symbol]?.ISIN || "-"
     };
   }
 }
