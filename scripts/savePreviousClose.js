@@ -1,97 +1,54 @@
 // scripts/savePreviousClose.js
-import fs from "fs";
-import path from "path";
-import axios from "axios";
-import { fileURLToPath } from "url";
-import { createClient } from "@supabase/supabase-js";
+import supabase from "../core/supabaseClient.js";
+import fetchEtfData from "./fetchEtfData.js"; // funzione che recupera i dati live
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const url = "http://localhost:3000/api/etf"; // endpoint locale
-const dataDir = path.join(__dirname, "../data");
-const filePath = path.join(dataDir, "previousClose.json");
-
-const labels = {
-  VUAA: "S&P 500",
-  VNGA80: "LifeStrategy 80",
-  GOLD: "Physical Gold",
-  SWDA: "Core MSCI World",
-  VWCE: "FTSE All World",
-  XEON: "XEON",
-  XUSE: "MSCI World Ex-USA",
-  EXUS: "MSCI World Ex-USA"
-};
-
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
-const supabase =
-  SUPABASE_URL && SUPABASE_ANON_KEY
-    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-    : null;
-
-async function savePreviousClose() {
+export default async function savePreviousClose() {
   try {
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-      console.log("Creata cartella data/:", dataDir);
-    }
+    // 1. Recupera dati ETF live
+    const etfData = await fetchEtfData();
 
-    const res = await axios.get(url);
-    const data = res.data;
+    for (const etf of etfData) {
+      const { symbol, label, close_value } = etf;
 
-    const today = new Date().toISOString().split("T")[0];
-    const snapshot = {};
-    const rows = [];
+      // 2. Arrotonda prezzo a 2 decimali
+      const roundedClose = Number(close_value).toFixed(2);
 
-    for (const key in data) {
-      const price = data[key]?.price;
-      const p = parseFloat(price);
-      if (!isNaN(p)) {
-        // Recupera il previousClose del giorno prima da etf_prices
-        let prevClose = null;
-        if (supabase) {
-          const { data: prevRow } = await supabase
-            .from("etf_prices")
-            .select("lastPrice")
-            .eq("symbol", key)
-            .order("snapshot_date", { ascending: false })
-            .limit(1);
-          prevClose = prevRow?.[0]?.lastPrice ?? null;
+      // 3. Recupera ultimo record precedente per calcolare variazione
+      const { data: prevRows, error: prevError } = await supabase
+        .from("previous_close")
+        .select("close_value")
+        .eq("symbol", symbol)
+        .order("snapshot_date", { ascending: false })
+        .limit(1);
+
+      if (prevError) throw prevError;
+
+      let dailyChange = null;
+      if (prevRows && prevRows.length > 0) {
+        const prevClose = Number(prevRows[0].close_value);
+        if (prevClose !== 0) {
+          dailyChange = (((roundedClose - prevClose) / prevClose) * 100).toFixed(2);
         }
-
-        snapshot[key] = {
-          label: labels[key] || key,
-          price: p,
-          previousClose: prevClose,
-          date: today
-        };
-
-        rows.push({
-          symbol: key,
-          lastPrice: p,              // snapshot del giorno chiuso
-          previousClose: prevClose,  // chiusura del giorno prima
-          lastChange: prevClose
-            ? (((p - prevClose) / prevClose) * 100).toFixed(2)
-            : "N/A",
-          snapshot_date: today
-        });
-      } else {
-        console.warn(`Nessun valore valido per ${key}, salto`);
       }
+
+      // 4. Inserisci nuovo record in Supabase
+      const { error: insertError } = await supabase
+        .from("previous_close")
+        .insert([
+          {
+            symbol,
+            label,
+            close_value: roundedClose,
+            snapshot_date: new Date().toISOString(),
+            daily_change: dailyChange,
+          },
+        ]);
+
+      if (insertError) throw insertError;
     }
 
-    fs.writeFileSync(filePath, JSON.stringify(snapshot, null, 2));
-    console.log("previousClose.json aggiornato:", filePath);
-
-    if (supabase && rows.length > 0) {
-      const { error } = await supabase.from("etf_prices").insert(rows);
-      if (error) throw error;
-      console.log(`Inseriti ${rows.length} record su Supabase per data ${today}`);
-    }
+    console.log("Snapshot salvato correttamente alle 23:30");
   } catch (err) {
-    console.error("Errore nel salvataggio:", err?.message || err);
+    console.error("Errore nel salvataggio snapshot:", err.message);
   }
 }
-
-savePreviousClose();
