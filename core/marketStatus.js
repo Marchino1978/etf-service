@@ -6,7 +6,7 @@ export default async function handler(req, res) {
     // Recupera dati ETF dal previous_close (ordinati per data decrescente)
     const { data: etfRows, error: etfError } = await supabase
       .from("previous_close")
-      .select("symbol, close_value, snapshot_date, label")
+      .select("symbol, close_value, snapshot_date, label, daily_change")
       .order("snapshot_date", { ascending: false });
 
     if (etfError) throw etfError;
@@ -14,34 +14,24 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Nessun dato ETF disponibile" });
     }
 
-    // Raggruppa per simbolo → prendi ultimo e penultimo record
-    const grouped = {};
+    // Mappa per simbolo → ultima entry
+    const latestBySymbol = {};
     for (const row of etfRows) {
-      if (!grouped[row.symbol]) {
-        grouped[row.symbol] = { latest: row, previous: null };
-      } else if (!grouped[row.symbol].previous) {
-        grouped[row.symbol].previous = row;
+      if (!latestBySymbol[row.symbol]) {
+        latestBySymbol[row.symbol] = row;
       }
     }
 
-    // Costruisci output con variazione giornaliera
-    const output = Object.values(grouped).map(({ latest, previous }) => {
-      const price = latest.close_value;
-      const previousClose = previous ? previous.close_value : null;
-
-      let dailyChange = null;
-      if (previousClose !== null && previousClose !== 0) {
-        dailyChange = (((price - previousClose) / previousClose) * 100).toFixed(2);
-      }
-
-      return {
-        symbol: latest.symbol,
-        label: latest.label,
-        price,
-        previousClose,
-        dailyChange,
-      };
-    });
+    // Costruisci output con arrotondamento a 2 decimali
+    const output = Object.values(latestBySymbol).map((etf) => ({
+      symbol: etf.symbol,
+      label: etf.label,
+      price: etf.close_value ? Number(etf.close_value).toFixed(2) : null,
+      previousClose: etf.close_value ? Number(etf.close_value).toFixed(2) : null,
+      dailyChange: etf.daily_change !== undefined && etf.daily_change !== null
+        ? Number(etf.daily_change).toFixed(2)
+        : null,
+    }));
 
     res.status(200).json({
       datetime: new Date().toISOString(),
