@@ -21,3 +21,9 @@ primary_region = 'fra'
   cpu_kind = 'shared'
   cpus = 1
   memory_mb = 1024
+
+[[jobs]]
+  name = "save-previous-close"
+  schedule = "0 23 * * 1-5"
+  command = ["node", "scripts/savePreviousClose.js"]
+
