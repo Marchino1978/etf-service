@@ -2,8 +2,36 @@
 import supabase from "../core/supabaseClient.js";
 import fetchEtfData from "./fetchEtfData.js";
 
+function isTimeToRun() {
+  // Ora italiana (gestisce automaticamente CET/CEST)
+  const now = new Date();
+  const italyTime = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Rome" }));
+
+  const hours = italyTime.getHours();
+  const minutes = italyTime.getMinutes();
+  const day = italyTime.getDay(); // 0=dom, 1=lun, ..., 6=sab
+
+  // Solo lun–ven
+  if (day === 0 || day === 6) {
+    console.log("Non è un giorno lavorativo. Esco.");
+    return false;
+  }
+
+  // Esegui solo alle 23:30 italiane
+  if (hours === 23 && minutes === 30) {
+    console.log("Ora corretta (23:30 italiane). Procedo con lo snapshot.");
+    return true;
+  }
+
+  console.log(`Ora non valida (${hours}:${minutes} IT). Esco.`);
+  return false;
+}
+
 export default async function savePreviousClose() {
   try {
+    // ⛔ Se non è il momento giusto, esci subito
+    if (!isTimeToRun()) return;
+
     const etfData = await fetchEtfData();
     const today = new Date().toISOString().slice(0, 10);
 
