@@ -109,7 +109,7 @@
           row.innerHTML = `
             <td>${etf.symbol}</td>
             <td>${etf.label}</td>
-            <td>Prezzo: ${etf.price != null ? Number(etf.price).toFixed(2) : "-"} €</td>
+            <td>${etf.price != null ? Number(etf.price).toFixed(2) : "-"} €</td>
             <td>${etf.previousClose != null ? Number(etf.previousClose).toFixed(2) : "-"} €</td>
             <td>${etf.dailyChange != null ? Number(etf.dailyChange).toFixed(2) : "-"} %</td>
           `;
