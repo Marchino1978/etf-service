@@ -1,7 +1,8 @@
-# fly.toml app configuration file generated for etf-service on 2025-12-20T17:56:53Z
+# fly.toml app configuration file generated for etf-service
+# See https://fly.io/docs/reference/configuration/ for details.
 
-app = 'etf-service'
-primary_region = 'fra'
+app = "etf-service"
+primary_region = "fra"
 
 [build]
 
@@ -11,13 +12,13 @@ primary_region = 'fra'
 [http_service]
   internal_port = 3000
   force_https = true
-  auto_stop_machines = 'off'      # NON spegnere la macchina
+  auto_stop_machines = "off"      # NON spegnere la macchina
   auto_start_machines = true
   min_machines_running = 1        # Tieni almeno 1 macchina sempre accesa
-  processes = ['app']
+  processes = ["app"]
 
 [[vm]]
-  memory = '1gb'
-  cpu_kind = 'shared'
+  memory = "512MB"
+  cpu_kind = "shared"
   cpus = 1
-  memory_mb = 1024
+  memory_mb = 512
