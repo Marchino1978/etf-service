@@ -1,4 +1,3 @@
-
 # fly.toml app configuration file generated for etf-service on 2025-12-20T17:56:53Z
 
 app = 'etf-service'
@@ -12,23 +11,10 @@ primary_region = 'fra'
 [http_service]
   internal_port = 3000
   force_https = true
-  auto_stop_machines = 'stop'
+  auto_stop_machines = 'off'      # NON spegnere la macchina
   auto_start_machines = true
-  min_machines_running = 0
+  min_machines_running = 1        # Tieni almeno 1 macchina sempre accesa
   processes = ['app']
-
-# JOB 21-UTC — lo script decide se è l'ora giusta (23:00 italiane)
-[[jobs]]
-  processes = ["app"]
-  name = "save-previous-close-21utc"
-  schedule = "0 21 * * 1-5"
-  command = ["node", "scripts/savePreviousClose.js"]
-
-[[jobs]]
-  processes = ["app"]
-  name = "save-previous-close-22utc"
-  schedule = "0 22 * * 1-5"
-  command = ["node", "scripts/savePreviousClose.js"]
 
 [[vm]]
   memory = '1gb'

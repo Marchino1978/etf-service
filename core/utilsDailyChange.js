@@ -24,7 +24,7 @@ export async function calcDailyChange(symbol, currentPrice) {
 
     const variation = ((currentPrice - prevClose) / prevClose) * 100;
 
-    // 🔎 Correzione: niente spazio + niente doppio simbolo
+    // Correzione: niente spazio + niente doppio simbolo
     return variation.toFixed(2); // solo numero
     // oppure: return `${variation.toFixed(2)}%`;
   } catch (err) {
