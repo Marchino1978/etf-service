@@ -7,7 +7,6 @@ import { getPrice, getAllPrices } from "../core/store.js";
 import "../core/updater.js";
 
 import marketStatusRoute from "../core/marketStatus.js";
-import savePreviousCloseRoute from "../routes/savePreviousClose.js";
 import supabase from "./supabaseClient.js";
 import { etfs } from "../core/index.js";
 import { calcDailyChange } from "./utilsDailyChange.js";
@@ -165,7 +164,6 @@ async function addDailyChange(symbol, price) {
    Routing aggiuntivo
 -------------------------------------------------------- */
 app.use("/api", marketStatusRoute);
-app.use("/api", savePreviousCloseRoute);
 
 // Nuovo endpoint POST per aggiornare tutti gli ETF
 app.post("/api/update-all", async (req, res) => {
