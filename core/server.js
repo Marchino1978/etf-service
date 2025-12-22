@@ -11,6 +11,7 @@ import savePreviousCloseRoute from "../routes/savePreviousClose.js";
 import supabase from "./supabaseClient.js";
 import { etfs } from "../core/index.js";
 import { calcDailyChange } from "./utilsDailyChange.js";
+import updateAll from "./updater.js";
 
 dotenv.config({ path: "./.env" });
 
@@ -165,6 +166,17 @@ async function addDailyChange(symbol, price) {
 -------------------------------------------------------- */
 app.use("/api", marketStatusRoute);
 app.use("/api", savePreviousCloseRoute);
+
+// Nuovo endpoint POST per aggiornare tutti gli ETF
+app.post("/api/update-all", async (req, res) => {
+  try {
+    await updateAll();
+    res.json({ status: "ok", message: "Aggiornamento ETF completato" });
+  } catch (error) {
+    console.error("Errore aggiornamento ETF:", error);
+    res.status(500).json({ status: "error", message: error.message });
+  }
+});
 
 /* -------------------------------------------------------
    Avvio server

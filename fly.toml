@@ -14,7 +14,7 @@ primary_region = "fra"
   force_https = true
   auto_stop_machines = "off"      # NON spegnere la macchina
   auto_start_machines = true
-  min_machines_running = 1        # Tieni almeno 1 macchina sempre accesa
+  min_machines_running = 0
   processes = ["app"]
 
 [[vm]]
