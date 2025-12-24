@@ -16,6 +16,7 @@ const fixedHolidaysEU = [
   { month: 1, day: 1 },   // Capodanno
   { month: 5, day: 1 },   // Festa del lavoro
   { month: 8, day: 15 },  // Ferragosto
+  { month: 12, day: 24 }, // Vigilia di Natale
   { month: 12, day: 25 }, // Natale
   { month: 12, day: 26 }  // Santo Stefano
 ];
