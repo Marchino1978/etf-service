@@ -18,7 +18,8 @@ const fixedHolidaysEU = [
   { month: 8, day: 15 },  // Ferragosto
   { month: 12, day: 24 }, // Vigilia di Natale
   { month: 12, day: 25 }, // Natale
-  { month: 12, day: 26 }  // Santo Stefano
+  { month: 12, day: 26 }, // Santo Stefano
+  { month: 12, day: 31 }  // Ultimo dell'anno
 ];
 
 // Calcolo Pasqua (algoritmo di Meeus)
@@ -39,6 +40,10 @@ function pasquettaDate(year) {
   return easterDate(year).plus({ days: 1 });
 }
 
+function goodFridayDate(year) {
+  return easterDate(year).minus({ days: 2 });
+}
+
 // Versione semplificata: mercato unico EU, niente simboli
 export function isMarketOpen(now = DateTime.now()) {
   const market = config.marketHours.EU;
@@ -52,10 +57,15 @@ export function isMarketOpen(now = DateTime.now()) {
     return false;
   }
 
-  // Pasqua e Pasquetta
+  // Pasqua, Pasquetta e Venerdì Santo
   const easter = easterDate(local.year);
   const pasquetta = pasquettaDate(local.year);
-  if (local.hasSame(easter, 'day') || local.hasSame(pasquetta, 'day')) {
+  const goodFriday = goodFridayDate(local.year);
+  if (
+    local.hasSame(easter, 'day') ||
+    local.hasSame(pasquetta, 'day') ||
+    local.hasSame(goodFriday, 'day')
+  ) {
     return false;
   }
 
